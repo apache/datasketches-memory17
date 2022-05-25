@@ -1,0 +1,99 @@
+name: Java Test Coverage with Maven, Coveralls
+
+on:
+  pull_request:
+  push:
+    branches: [ master ]
+  workflow_dispatch:
+
+env:
+  MAVEN_OPTS: -Xmx4g -Xms1g
+  repo_token: ${{secrets.coveralls_token}}
+  RUNNER_TEMP: /tmp
+
+jobs:
+  build:
+    name: Build, Test, Coverage
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        jdk: [17]
+
+    # All JDKs are installed per build machine which is inefficient
+
+    env:
+      JDK_VERSION: ${{ matrix.jdk }}
+
+    steps:
+      - name: "Checkout ${{ github.ref }} ( ${{ github.sha }} )"
+        uses: actions/checkout@v2
+        with:
+          persist-credentials: false
+
+      - name: Cache local Maven repository
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2/repository
+          key: build-${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: build-${{ runner.os }}-maven-
+
+      - name: Install JDK 17
+        uses: AdoptOpenJDK/install-jdk@v1
+        with:
+          version: '17'
+          architecture: x64
+          impl: hotspot
+          targets: 'JAVA17_HOME'
+
+      - name: Install Matrix JDK
+        uses: AdoptOpenJDK/install-jdk@v1
+        with:
+          version: ${{ matrix.jdk }}
+          architecture: x64
+          impl: hotspot
+          targets: 'JAVA_HOME'
+
+      - name: Echo Java Version
+        run: >
+          java -version
+
+      - name: Compile
+        run: >
+          mvn clean compile
+          -Dmaven.javadoc.skip=true
+          -Dgpg.skip=true
+          --toolchains .github/workflows/.toolchains.xml
+
+      - name: Install Dependencies
+        run: >
+          mvn clean install
+          -DskipTests=true
+          -Dmaven.javadoc.skip=true
+          -Dgpg.skip=true
+          --toolchains .github/workflows/.toolchains.xml
+
+      - name: Package
+        run: >
+          mvn package
+          -Dmaven.javadoc.skip=true
+          -Dgpg.skip=true
+          -Denvironment=ci
+          -Dmatrix.jdk.version=${{matrix.jdk}}
+          --toolchains .github/workflows/.toolchains.xml
+
+      # The GitTag for CI purposes is irrelevant
+      - name: Custom build script
+        run: |
+          ./tools/scripts/compile-package-jar.sh $JAVA_HOME x.y.z .
+        shell: bash
+
+      - name: Test & Report
+        if: ${{ matrix.jdk == 17 && success() }}
+        run: >
+          mvn verify coveralls:report -B -V
+          -Dcoveralls-repo-token=${repo_token}
+          -Dmaven.javadoc.skip=true
+          -Dgpg.skip=true
+          -Dmatrix.jdk.version=${{matrix.jdk}}
+          --toolchains .github/workflows/.toolchains.xml

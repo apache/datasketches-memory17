@@ -17,10 +17,14 @@
  * under the License.
  */
 
-package org.apache.datasketches.memory;
+package org.apache.datasketches.memory.internal;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.datasketches.memory.internal.UnsafeUtil.unsafe;
+
+import java.util.Objects;
+
+import jdk.incubator.foreign.MemoryAccess;
+import jdk.incubator.foreign.MemorySegment;
 
 /**
  * <p>The MurmurHash3 is a fast, non-cryptographic, 128-bit hash function that has
@@ -38,13 +42,16 @@ import static org.apache.datasketches.memory.internal.UnsafeUtil.unsafe;
  * <p>This implementation produces exactly the same hash result as the
  * MurmurHash3 function in datasketches-java given compatible inputs.</p>
  *
+ * <p>This version 3 of the implementation leverages the jdk.incubator.foreign package of JDK-17 in place of
+ * the Unsafe class.
+ *
  * @author Lee Rhodes
  */
-public final class MurmurHash3v2 {
+public final class MurmurHash3v3 {
   private static final long C1 = 0x87c37b91114253d5L;
   private static final long C2 = 0x4cf5ad432745937fL;
 
-  //Provided for backward compatibility
+
 
   /**
    * Returns a 128-bit hash of the input.
@@ -58,7 +65,7 @@ public final class MurmurHash3v2 {
     if ((in == null) || (in.length == 0)) {
       throw new IllegalArgumentException("Input in is empty or null.");
     }
-    return hash(Memory.wrap(in), 0L, in.length << 3, seed, new long[2]);
+    return hash(MemorySegment.ofArray(in), 0L, in.length << 3, seed, new long[2]);
   }
 
   /**
@@ -73,7 +80,7 @@ public final class MurmurHash3v2 {
     if ((in == null) || (in.length == 0)) {
       throw new IllegalArgumentException("Input in is empty or null.");
     }
-    return hash(Memory.wrap(in), 0L, in.length << 2, seed, new long[2]);
+    return hash(MemorySegment.ofArray(in), 0L, in.length << 2, seed, new long[2]);
   }
 
   /**
@@ -88,7 +95,7 @@ public final class MurmurHash3v2 {
     if ((in == null) || (in.length == 0)) {
       throw new IllegalArgumentException("Input in is empty or null.");
     }
-    return hash(Memory.wrap(in), 0L, in.length << 1, seed, new long[2]);
+    return hash(MemorySegment.ofArray(in), 0L, in.length << 1, seed, new long[2]);
   }
 
   /**
@@ -103,7 +110,7 @@ public final class MurmurHash3v2 {
     if ((in == null) || (in.length == 0)) {
       throw new IllegalArgumentException("Input in is empty or null.");
     }
-    return hash(Memory.wrap(in), 0L, in.length, seed, new long[2]);
+    return hash(MemorySegment.ofArray(in), 0L, in.length, seed, new long[2]);
   }
 
   //Single primitive inputs
@@ -151,7 +158,7 @@ public final class MurmurHash3v2 {
       throw new IllegalArgumentException("Input in is empty or null.");
     }
     final byte[] byteArr = in.getBytes(UTF_8);
-    return hash(Memory.wrap(byteArr), 0L, byteArr.length, seed, hashOut);
+    return hash(MemorySegment.ofArray(byteArr), 0L, byteArr.length, seed, hashOut);
   }
 
   //The main API call
@@ -159,7 +166,7 @@ public final class MurmurHash3v2 {
   /**
    * Returns a 128-bit hash of the input as a long array of size 2.
    *
-   * @param mem The input on-heap Memory. Must be non-null and non-empty,
+   * @param seg The input on-heap Memory. Must be non-null and non-empty,
    * otherwise throws IllegalArgumentException.
    * @param offsetBytes the starting point within Memory.
    * @param lengthBytes the total number of bytes to be hashed.
@@ -168,16 +175,13 @@ public final class MurmurHash3v2 {
    * @return the hash.
    */
   @SuppressWarnings("restriction")
-  public static long[] hash(final Memory mem, final long offsetBytes, final long lengthBytes,
+  public static long[] hash(final MemorySegment seg, final long offsetBytes, final long lengthBytes,
       final long seed, final long[] hashOut) {
-    if ((mem == null) || (mem.getCapacity() == 0L)) {
-      throw new IllegalArgumentException("Input mem is empty or null.");
-    }
-    final Object uObj = ((WritableMemory) mem).getArray();
-    if (uObj == null) {
-      throw new IllegalArgumentException("The backing resource of input mem is not on-heap.");
-    }
-    long cumOff = mem.getCumulativeOffset() + offsetBytes;
+    Objects.requireNonNull(seg, "Input MemorySegment is null");
+    if (seg.byteSize() == 0L) { throw new IllegalArgumentException("Input MemorySegment is empty."); }
+
+
+    long cumOff = offsetBytes;
 
     long h1 = seed;
     long h2 = seed;
@@ -185,8 +189,8 @@ public final class MurmurHash3v2 {
 
     // Process the 128-bit blocks (the body) into the hash
     while (rem >= 16L) {
-      final long k1 = unsafe.getLong(uObj, cumOff);     //0, 16, 32, ...
-      final long k2 = unsafe.getLong(uObj, cumOff + 8); //8, 24, 40, ...
+      final long k1 = MemoryAccess.getLongAtOffset(seg, cumOff);     //0, 16, 32, ...
+      final long k2 = MemoryAccess.getLongAtOffset(seg, cumOff + 8); //8, 24, 40, ...
       cumOff += 16L;
       rem -= 16L;
 
@@ -207,75 +211,75 @@ public final class MurmurHash3v2 {
       long k2 = 0;
       switch ((int) rem) {
         case 15: {
-          k2 ^= (unsafe.getByte(uObj, cumOff + 14) & 0xFFL) << 48;
+          k2 ^= (MemoryAccess.getByteAtOffset(seg, cumOff + 14) & 0xFFL) << 48;
         }
         //$FALL-THROUGH$
         case 14: {
-          k2 ^= (unsafe.getShort(uObj, cumOff + 12) & 0xFFFFL) << 32;
-          k2 ^= (unsafe.getInt(uObj, cumOff + 8) & 0xFFFFFFFFL);
-          k1 = unsafe.getLong(uObj, cumOff);
+          k2 ^= (MemoryAccess.getShortAtOffset(seg, cumOff + 12) & 0xFFFFL) << 32;
+          k2 ^= (MemoryAccess.getIntAtOffset(seg, cumOff + 8) & 0xFFFFFFFFL);
+          k1 = MemoryAccess.getLongAtOffset(seg, cumOff);
           break;
         }
 
         case 13: {
-          k2 ^= (unsafe.getByte(uObj, cumOff + 12) & 0xFFL) << 32;
+          k2 ^= (MemoryAccess.getByteAtOffset(seg, cumOff + 12) & 0xFFL) << 32;
         }
         //$FALL-THROUGH$
         case 12: {
-          k2 ^= (unsafe.getInt(uObj, cumOff + 8) & 0xFFFFFFFFL);
-          k1 = unsafe.getLong(uObj, cumOff);
+          k2 ^= (MemoryAccess.getIntAtOffset(seg, cumOff + 8) & 0xFFFFFFFFL);
+          k1 = MemoryAccess.getLongAtOffset(seg, cumOff);
           break;
         }
 
         case 11: {
-          k2 ^= (unsafe.getByte(uObj, cumOff + 10) & 0xFFL) << 16;
+          k2 ^= (MemoryAccess.getByteAtOffset(seg, cumOff + 10) & 0xFFL) << 16;
         }
         //$FALL-THROUGH$
         case 10: {
-          k2 ^= (unsafe.getShort(uObj, cumOff +  8) & 0xFFFFL);
-          k1 = unsafe.getLong(uObj, cumOff);
+          k2 ^= (MemoryAccess.getShortAtOffset(seg, cumOff +  8) & 0xFFFFL);
+          k1 = MemoryAccess.getLongAtOffset(seg, cumOff);
           break;
         }
 
         case  9: {
-          k2 ^= (unsafe.getByte(uObj, cumOff +  8) & 0xFFL);
+          k2 ^= (MemoryAccess.getByteAtOffset(seg, cumOff +  8) & 0xFFL);
         }
         //$FALL-THROUGH$
         case  8: {
-          k1 = unsafe.getLong(uObj, cumOff);
+          k1 = MemoryAccess.getLongAtOffset(seg, cumOff);
           break;
         }
 
         case  7: {
-          k1 ^= (unsafe.getByte(uObj, cumOff +  6) & 0xFFL) << 48;
+          k1 ^= (MemoryAccess.getByteAtOffset(seg, cumOff +  6) & 0xFFL) << 48;
         }
         //$FALL-THROUGH$
         case  6: {
-          k1 ^= (unsafe.getShort(uObj, cumOff +  4) & 0xFFFFL) << 32;
-          k1 ^= (unsafe.getInt(uObj, cumOff) & 0xFFFFFFFFL);
+          k1 ^= (MemoryAccess.getShortAtOffset(seg, cumOff +  4) & 0xFFFFL) << 32;
+          k1 ^= (MemoryAccess.getIntAtOffset(seg, cumOff) & 0xFFFFFFFFL);
           break;
         }
 
         case  5: {
-          k1 ^= (unsafe.getByte(uObj, cumOff +  4) & 0xFFL) << 32;
+          k1 ^= (MemoryAccess.getByteAtOffset(seg, cumOff +  4) & 0xFFL) << 32;
         }
         //$FALL-THROUGH$
         case  4: {
-          k1 ^= (unsafe.getInt(uObj, cumOff) & 0xFFFFFFFFL);
+          k1 ^= (MemoryAccess.getIntAtOffset(seg, cumOff) & 0xFFFFFFFFL);
           break;
         }
 
         case  3: {
-          k1 ^= (unsafe.getByte(uObj, cumOff +  2) & 0xFFL) << 16;
+          k1 ^= (MemoryAccess.getByteAtOffset(seg, cumOff +  2) & 0xFFL) << 16;
         }
         //$FALL-THROUGH$
         case  2: {
-          k1 ^= (unsafe.getShort(uObj, cumOff) & 0xFFFFL);
+          k1 ^= (MemoryAccess.getShortAtOffset(seg, cumOff) & 0xFFFFL);
           break;
         }
 
         case  1: {
-          k1 ^= (unsafe.getByte(uObj, cumOff) & 0xFFL);
+          k1 ^= (MemoryAccess.getByteAtOffset(seg, cumOff) & 0xFFL);
           break;
         }
         //default: break; //can't happen

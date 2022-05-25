@@ -17,10 +17,7 @@
  * under the License.
  */
 
-
 package org.apache.datasketches.memory;
-
-import static org.apache.datasketches.memory.internal.Util.negativeCheck;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,8 +27,8 @@ import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
-import org.apache.datasketches.memory.internal.Prim;
-import org.apache.datasketches.memory.internal.UnsafeUtil;
+
+import jdk.incubator.foreign.MemorySegment;
 
 /**
  * Defines the read-only API for offset access to a resource.
@@ -41,41 +38,44 @@ import org.apache.datasketches.memory.internal.UnsafeUtil;
 public interface Memory extends BaseState {
 
   //BYTE BUFFER
-
   /**
-   * Accesses the given <i>ByteBuffer</i> for read-only operations. The returned <i>Memory</i> object has
-   * the same byte order, as the given <i>ByteBuffer</i>.
-   * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null and with capacity &ge; 0.
+   * Provides a view of the given <i>ByteBuffer</i> for read-only operations.
+   * The returned <i>Memory</i> will use the native <i>ByteOrder</i>,
+   * ignoring the byte order of the given <i>ByteBuffer</i>.
+   * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null.
    * @return a new <i>Memory</i> for read-only operations on the given <i>ByteBuffer</i>.
    */
   static Memory wrap(ByteBuffer byteBuffer) {
-    return wrap(byteBuffer, byteBuffer.order());
+    return wrap(byteBuffer, ByteOrder.nativeOrder());
   }
 
   /**
-   * Accesses the given <i>ByteBuffer</i> for read-only operations. The returned <i>Memory</i> object has
-   * the given byte order, ignoring the byte order of the given <i>ByteBuffer</i> for future reads and writes.
-   * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null and with capacity &ge; 0.
+   * Provides a view of the given <i>ByteBuffer</i> for read-only operations.
+   * The returned <i>Memory</i> will use the given byte order,
+   * ignoring the byte order of the given <i>ByteBuffer</i>.
+   * This does not change the byte order of data already in the <i>ByteBuffer</i>.
+   * The view starts at zero (inclusive) and ends at the ByteBuffer's capacity (exclusive).
+   * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return a new <i>Memory</i> for read-only operations on the given <i>ByteBuffer</i>.
    */
   static Memory wrap(ByteBuffer byteBuffer, ByteOrder byteOrder) {
     Objects.requireNonNull(byteBuffer, "byteBuffer must not be null");
     Objects.requireNonNull(byteOrder, "byteOrder must not be null");
-    negativeCheck(byteBuffer.capacity(), "byteBuffer.capacity()");
-    return BaseWritableMemoryImpl.wrapByteBuffer(byteBuffer, true, byteOrder, null);
+    ByteBuffer byteBuf = byteBuffer.position(0).limit(byteBuffer.capacity()).asReadOnlyBuffer();
+    return BaseWritableMemoryImpl.wrapByteBuffer(byteBuf, true, byteOrder);
   }
 
   //MAP
   /**
-   * Maps the entire given file into native-ordered <i>Memory</i> for read operations
+   * Maps the given file into <i>Memory</i> for read operations
    * Calling this method is equivalent to calling
    * {@link #map(File, long, long, ByteOrder) map(file, 0, file.length(), ByteOrder.nativeOrder())}.
    * @param file the given file to map. It must be non-null, length &ge; 0, and readable.
-   * @return <i>MapHandle</i> for managing the mapped memory.
-   * Please read Javadocs for {@link Handle}.
+   * @return mapped Memory.
+   * @throws Exception
    */
-  static MapHandle map(File file) {
+  static Memory map(File file) throws Exception {
     return map(file, 0, file.length(), ByteOrder.nativeOrder());
   }
 
@@ -84,18 +84,16 @@ public interface Memory extends BaseState {
    * @param file the given file to map. It must be non-null,readable and length &ge; 0.
    * @param fileOffsetBytes the position in the given file in bytes. It must not be negative.
    * @param capacityBytes the size of the mapped memory. It must be &ge; 0.
-   * @param byteOrder the byte order to be used for the mapped memory. It must be non-null.
-   * @return <i>MapHandle</i> for managing the mapped memory.
-   * Please read Javadocs for {@link Handle}.
+   * @param byteOrder the byte order to be used.  It must be non-null.
+   * @return Memory
+   * @throws Exception
    */
-  static MapHandle map(File file, long fileOffsetBytes, long capacityBytes, ByteOrder byteOrder) {
+  static Memory map(File file, long fileOffsetBytes, long capacityBytes, ByteOrder byteOrder)
+      throws Exception {
     Objects.requireNonNull(file, "file must be non-null.");
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null.");
     if (!file.canRead()) { throw new IllegalArgumentException("file must be readable."); }
-    negativeCheck(file.length(), "file.length()");
-    negativeCheck(fileOffsetBytes, "fileOffsetBytes");
-    negativeCheck(capacityBytes, "capacityBytes");
-    return (MapHandle) BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, true, byteOrder);
+    return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, true, byteOrder);
   }
 
   //REGIONS
@@ -123,7 +121,7 @@ public interface Memory extends BaseState {
    * </ul>
    * @param offsetBytes the starting offset with respect to the origin of this Memory. It must be &ge; 0.
    * @param capacityBytes the capacity of the region in bytes. It must be &ge; 0.
-   * @param byteOrder the given byte order. It must be non-null.
+   * @param byteOrder the byte order to be used.  It must be non-null.
    * @return a new <i>Memory</i> representing the defined region based on the given
    * offsetBytes, capacityBytes and byteOrder.
    */
@@ -157,15 +155,15 @@ public interface Memory extends BaseState {
    * <li>Returned object's <i>capacity</i> = this object's capacity</li>
    * <li>Returned object's <i>start</i>, <i>position</i> and <i>end</i> are mutable</li>
    * </ul>
-   * @param byteOrder the given byte order
+   * @param byteOrder the byte order to be used.  It must be non-null.
    * @return a new <i>Buffer</i> with the given byteOrder.
    */
   Buffer asBuffer(ByteOrder byteOrder);
 
-  //ACCESS PRIMITIVE HEAP ARRAYS for readOnly
+  //WRAP - ACCESS PRIMITIVE HEAP ARRAYS for readOnly
   /**
    * Wraps the given primitive array for read operations assuming native byte order.
-   * @param array the given primitive array. It must be non-null and with length &ge; 0.
+   * @param array the given primitive array. It must be non-null.
    * @return a new <i>Memory</i> for read operations
    */
   static Memory wrap(byte[] array) {
@@ -184,115 +182,88 @@ public interface Memory extends BaseState {
   }
 
   /**
-   * Wraps the given primitive array for read operations with the given byte order.
-   * @param array the given primitive array. It must be non-null and length &ge; 0.
+   * Wraps the given primitive array for read operations assuming native byte order.
+   * @param array the given primitive array. It must be non-null.
    * @param offsetBytes the byte offset into the given array
-   * @param lengthBytes the number of bytes to include from the given array, it must be &ge; 0.
-   * @param byteOrder the byte order to be used
+   * @param lengthBytes the number of bytes to include from the given array.
+   * @param byteOrder the byte order to be used.  It must be non-null.
    * @return a new <i>Memory</i> for read operations
    */
   static Memory wrap(byte[] array, int offsetBytes, int lengthBytes, ByteOrder byteOrder) {
     Objects.requireNonNull(array, "array must be non-null");
-    Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
-    negativeCheck(offsetBytes, "offsetBytes");
-    negativeCheck(lengthBytes, "lengthBytes");
-    UnsafeUtil.checkBounds(offsetBytes, lengthBytes, array.length);
-    return BaseWritableMemoryImpl.wrapHeapArray(array, 0, lengthBytes, true, ByteOrder.nativeOrder(), null);
+    final MemorySegment slice = MemorySegment.ofArray(array).asSlice(offsetBytes, lengthBytes).asReadOnly();
+    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
+
   }
 
   /**
    * Wraps the given primitive array for read operations assuming native byte order.
-   * @param array the given primitive array. It must be non-null and length &ge; 0.
-   * @return a new <i>Memory</i> for read operations
-   */
-  static Memory wrap(boolean[] array) {
-    Objects.requireNonNull(array, "array must be non-null");
-    final long lengthBytes = array.length << Prim.BOOLEAN.shift();
-    return BaseWritableMemoryImpl.wrapHeapArray(array, 0, lengthBytes, true, ByteOrder.nativeOrder(), null);
-  }
-
-  /**
-   * Wraps the given primitive array for read operations assuming native byte order.
-   * @param array the given primitive array. It must be non-null and length &ge; 0.
+   * @param array the given primitive array. It must be non-null.
    * @return a new <i>Memory</i> for read operations
    */
   static Memory wrap(char[] array) {
     Objects.requireNonNull(array, "array must be non-null");
-    final long lengthBytes = array.length << Prim.CHAR.shift();
-    return BaseWritableMemoryImpl.wrapHeapArray(array, 0L, lengthBytes, true, ByteOrder.nativeOrder(), null);
+    final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
+    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
    * Wraps the given primitive array for read operations assuming native byte order.
-   * @param array the given primitive array. It must be non-null and length &ge; 0.
+   * @param array the given primitive array. It must be non-null.
    * @return a new <i>Memory</i> for read operations
    */
   static Memory wrap(short[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
-    final long lengthBytes = array.length << Prim.SHORT.shift();
-    return BaseWritableMemoryImpl.wrapHeapArray(array, 0L, lengthBytes, true, ByteOrder.nativeOrder(), null);
+    final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
+    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
    * Wraps the given primitive array for read operations assuming native byte order.
-   * @param array the given primitive array. It must be non-null and length &ge; 0.
+   * @param array the given primitive array. It must be non-null.
    * @return a new <i>Memory</i> for read operations
    */
   static Memory wrap(int[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
-    final long lengthBytes = array.length << Prim.INT.shift();
-    return BaseWritableMemoryImpl.wrapHeapArray(array, 0L, lengthBytes, true, ByteOrder.nativeOrder(), null);
+    final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
+    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
    * Wraps the given primitive array for read operations assuming native byte order.
-   * @param array the given primitive array. It must be non-null and length &ge; 0.
+   * @param array the given primitive array. It must be non-null.
    * @return a new <i>Memory</i> for read operations
    */
   static Memory wrap(long[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
-    final long lengthBytes = array.length << Prim.LONG.shift();
-    return BaseWritableMemoryImpl.wrapHeapArray(array, 0L, lengthBytes, true, ByteOrder.nativeOrder(), null);
+    final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
+    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
    * Wraps the given primitive array for read operations assuming native byte order.
-   * @param array the given primitive array. It must be non-null and length &ge; 0.
+   * @param array the given primitive array. It must be non-null.
    * @return a new <i>Memory</i> for read operations
    */
   static Memory wrap(float[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
-    final long lengthBytes = array.length << Prim.FLOAT.shift();
-    return BaseWritableMemoryImpl.wrapHeapArray(array, 0L, lengthBytes, true, ByteOrder.nativeOrder(), null);
+    final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
+    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
    * Wraps the given primitive array for read operations assuming native byte order.
-   * @param array the given primitive array. It must be non-null and length &ge; 0.
+   * @param array the given primitive array. It must be non-null.
    * @return a new <i>Memory</i> for read operations
    */
   static Memory wrap(double[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
-    final long lengthBytes = array.length << Prim.DOUBLE.shift();
-    return BaseWritableMemoryImpl.wrapHeapArray(array, 0L, lengthBytes, true, ByteOrder.nativeOrder(), null);
+    final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
+    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
   }
 
-  //PRIMITIVE getX() and getXArray()
-  /**
-   * Gets the boolean value at the given offset
-   * @param offsetBytes offset bytes relative to this Memory start
-   * @return the boolean at the given offset
-   */
-  boolean getBoolean(long offsetBytes);
 
-  /**
-   * Gets the boolean array at the given offset
-   * @param offsetBytes offset bytes relative to this Memory start
-   * @param dstArray The preallocated destination array.
-   * @param dstOffsetBooleans offset in array units
-   * @param lengthBooleans number of array units to transfer
-   */
-  void getBooleanArray(long offsetBytes, boolean[] dstArray, int dstOffsetBooleans, int lengthBooleans);
+  //PRIMITIVE getX() and getXArray()
 
   /**
    * Gets the byte value at the given offset
@@ -325,43 +296,6 @@ public interface Memory extends BaseState {
    * @param lengthChars number of array units to transfer
    */
   void getCharArray(long offsetBytes, char[] dstArray, int dstOffsetChars, int lengthChars);
-
-  /**
-   * Gets UTF-8 encoded bytes from this Memory, starting at offsetBytes to a length of
-   * utf8LengthBytes, decodes them into characters and appends them to the given Appendable.
-   * This is specifically designed to reduce the production of intermediate objects (garbage),
-   * thus significantly reducing pressure on the JVM Garbage Collector.
-   * @param offsetBytes offset bytes relative to the Memory start
-   * @param utf8LengthBytes the number of encoded UTF-8 bytes to decode. It is assumed that the
-   * caller has the correct number of utf8 bytes required to decode the number of characters
-   * to be appended to dst. Characters outside the ASCII range can require 2, 3 or 4 bytes per
-   * character to decode.
-   * @param dst the destination Appendable to append the decoded characters to.
-   * @return the number of characters decoded
-   * @throws IOException if dst.append() throws IOException
-   * @throws Utf8CodingException in case of malformed or illegal UTF-8 input
-   */
-  int getCharsFromUtf8(long offsetBytes, int utf8LengthBytes, Appendable dst)
-      throws IOException, Utf8CodingException;
-
-  /**
-   * Gets UTF-8 encoded bytes from this Memory, starting at offsetBytes to a length of
-   * utf8LengthBytes, decodes them into characters and appends them to the given StringBuilder.
-   * This method does *not* reset the length of the destination StringBuilder before appending
-   * characters to it.
-   * This is specifically designed to reduce the production of intermediate objects (garbage),
-   * thus significantly reducing pressure on the JVM Garbage Collector.
-   * @param offsetBytes offset bytes relative to the Memory start
-   * @param utf8LengthBytes the number of encoded UTF-8 bytes to decode. It is assumed that the
-   * caller has the correct number of utf8 bytes required to decode the number of characters
-   * to be appended to dst. Characters outside the ASCII range can require 2, 3 or 4 bytes per
-   * character to decode.
-   * @param dst the destination StringBuilder to append decoded characters to.
-   * @return the number of characters decoded.
-   * @throws Utf8CodingException in case of malformed or illegal UTF-8 input
-   */
-  int getCharsFromUtf8(long offsetBytes, int utf8LengthBytes, StringBuilder dst)
-      throws Utf8CodingException;
 
   /**
    * Gets the double value at the given offset
@@ -486,5 +420,3 @@ public interface Memory extends BaseState {
       throws IOException;
 
 }
-
-

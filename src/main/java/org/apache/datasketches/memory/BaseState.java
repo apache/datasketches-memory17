@@ -17,13 +17,14 @@
  * under the License.
  */
 
-
 package org.apache.datasketches.memory;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import org.apache.datasketches.memory.internal.BaseStateImpl;
+import jdk.incubator.foreign.MemorySegment;
+
+//import org.apache.datasketches.memory.internal.BaseStateImpl;
 
 /**
  * Keeps key configuration state for Memory and Buffer plus some common static variables
@@ -32,10 +33,17 @@ import org.apache.datasketches.memory.internal.BaseStateImpl;
  * @author Lee Rhodes
  */
 public interface BaseState {
+
   /**
-   * The placeholder for the default MemoryRequestServer, if set at all.
+   * The java line separator character as a String.
    */
-  static final MemoryRequestServer defaultMemReqSvr = new DefaultMemoryRequestServer();
+  static final String LS = System.getProperty("line.separator");
+
+  /**
+   * For off-heap segments, this closes the controlling ResourceScope. If the segment is
+   * not off-heap, this does nothing.
+   */
+  void close();
 
   //Byte Order Related
 
@@ -56,14 +64,6 @@ public interface BaseState {
   boolean isByteOrderCompatible(ByteOrder byteOrder);
 
   /**
-   * Returns true if the given object is an instance of this class and has equal data contents.
-   * @param that the given object
-   * @return true if the given Object is an instance of this class and has equal data contents.
-   */
-  @Override
-  boolean equals(Object that);
-
-  /**
    * Returns true if the given object is an instance of this class and has equal contents to
    * this object in the given range of bytes. This will also check two distinct ranges within the
    * same object for equals.
@@ -78,76 +78,26 @@ public interface BaseState {
       long thatOffsetBytes, long lengthBytes);
 
   /**
-   * Gets the backing ByteBuffer if it exists, otherwise returns null.
-   * @return the backing ByteBuffer if it exists, otherwise returns null.
+   * Wraps the underlying MemorySegment in a ByteBuffer.
+   * @see MemorySegment#asByteBuffer
+   *
+   * @return a ByteBuffer view of this memory segment.
+   *
    */
-  ByteBuffer getByteBuffer();
+  ByteBuffer asByteBuffer();
+
+  /**
+   * Returns a copy of the underlying MemorySegment.
+   * The size is limited to <i>Integer.MAX_VALUE</i>.
+   * @return a copy of the underlying MemorySegment
+   */
+  MemorySegment asMemorySegment();
 
   /**
    * Gets the capacity of this object in bytes
    * @return the capacity of this object in bytes
    */
   long getCapacity();
-
-  /**
-   * Gets the cumulative offset in bytes of this object from the backing resource.
-   * This offset may also include other offset components such as the native off-heap
-   * memory address, DirectByteBuffer split offsets, region offsets, and unsafe arrayBaseOffsets.
-   *
-   * @return the cumulative offset in bytes of this object from the backing resource.
-   */
-  long getCumulativeOffset();
-
-  /**
-   * Gets the cumulative offset in bytes of this object from the backing resource including the given
-   * offsetBytes. This offset may also include other offset components such as the native off-heap
-   * memory address, DirectByteBuffer split offsets, region offsets, and unsafe arrayBaseOffsets.
-   *
-   * @param offsetBytes offset to be added to the cumulative offset.
-   * @return the cumulative offset in bytes of this object from the backing resource including the
-   * given offsetBytes.
-   */
-  long getCumulativeOffset(long offsetBytes);
-
-  /**
-   * Returns the offset of address zero of this object relative to the address zero of the
-   * backing resource but not including the size of any Java object header.
-   * @return the offset of address zero of this object relative to the address zero of the
-   * backing resource but not including the size of any Java object header.
-   */
-  long getRegionOffset();
-
-  /**
-   * Returns the offset of address zero of this object relative to the address zero of the
-   * backing resource plus the given offsetBytes but not including the size of any Java object
-   * header.
-   * @param offsetBytes the given offsetBytes
-   * @return the offset of address zero of this object relative to the address zero of the
-   * backing resource plus the given offsetBytes but not including the size of any Java object
-   * header.
-   */
-  long getRegionOffset(long offsetBytes);
-
-  /**
-   * Returns true if this object is backed by an on-heap primitive array
-   * @return true if this object is backed by an on-heap primitive array
-   */
-  boolean hasArray();
-
-  /**
-   * Returns the hashCode of this object.
-   *
-   * <p>The hash code of this object depends upon all of its contents.
-   * Because of this, it is inadvisable to use these objects as keys in hash maps
-   * or similar data structures unless it is known that their contents will not change.</p>
-   *
-   * <p>If it is desirable to use these objects in a hash map depending only on object identity,
-   * than the {@link java.util.IdentityHashMap} can be used.</p>
-   *
-   * @return the hashCode of this object.
-   */
-  @Override
-  int hashCode();
 
   /**
    * Returns the 64-bit hash of the sequence of bytes in this object specified by
@@ -201,54 +151,23 @@ public interface BaseState {
   boolean isSameResource(Object that);
 
   /**
-   * Returns true if this object is valid and has not been closed.
-   * This is relevant only for direct (off-heap) memory and Mapped Files.
-   * @return true if this object is valid and has not been closed.
+   * Returns the configured MemoryRequestSever or null, if it has not been configured.
+   * @return the configured MemoryRequestSever or null, if it has not been configured.
    */
-  boolean isValid();
+  MemoryRequestServer getMemoryRequestServer();
 
   /**
-   * Checks that the specified range of bytes is within bounds of this object, throws
-   * {@link IllegalArgumentException} if it's not: i. e. if offsetBytes &lt; 0, or length &lt; 0,
-   * or offsetBytes + length &gt; {@link #getCapacity()}.
-   * @param offsetBytes the given offset in bytes of this object
-   * @param lengthBytes the given length in bytes of this object
+   * Returns true if the MemoryRequestServer has been configured.
+   * @return true if the MemoryRequestServer has been configured.
    */
-  void checkValidAndBounds(long offsetBytes, long lengthBytes);
-
-  //Monitoring
+  boolean hasMemoryRequestServer();
 
   /**
-   * Gets the current number of active direct memory allocations.
-   * @return the current number of active direct memory allocations.
+   * Sets the default MemoryRequestServer to be used in case of capacity overflow of off-heap
+   * (Direct or Native) allocated Memory or of on-heap allocated Memory.
+   * @param memReqSvr the given default MemoryRequestServer
    */
-  static long getCurrentDirectMemoryAllocations() {
-    return BaseStateImpl.getCurrentDirectMemoryAllocations();
-  }
-
-  /**
-   * Gets the current size of active direct memory allocated.
-   * @return the current size of active direct memory allocated.
-   */
-  static long getCurrentDirectMemoryAllocated() {
-    return BaseStateImpl.getCurrentDirectMemoryAllocated();
-  }
-
-  /**
-   * Gets the current number of active direct memory map allocations.
-   * @return the current number of active direct memory map allocations.
-   */
-  static long getCurrentDirectMemoryMapAllocations() {
-    return BaseStateImpl.getCurrentDirectMemoryMapAllocations();
-  }
-
-  /**
-   * Gets the current size of active direct memory map allocated.
-   * @return the current size of active direct memory map allocated.
-   */
-  static long getCurrentDirectMemoryMapAllocated() {
-    return BaseStateImpl.getCurrentDirectMemoryMapAllocated();
-  }
+  void setMemoryRequestServer(MemoryRequestServer memReqSvr);
 
   //TO STRING
 
