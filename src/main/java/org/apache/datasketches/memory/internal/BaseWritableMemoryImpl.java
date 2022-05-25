@@ -114,7 +114,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
    * @return this class constructed via the leaf node.
    * @throws Exception
    */
-  @SuppressWarnings("resource")
+  //@SuppressWarnings("resource")
   public static WritableMemory wrapMap(final File file, final long fileOffsetBytes,
       final long capacityBytes, final boolean localReadOnly, final ByteOrder byteOrder)
       throws Exception {

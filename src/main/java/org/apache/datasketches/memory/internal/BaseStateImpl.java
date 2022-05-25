@@ -28,6 +28,7 @@ import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.MemoryRequestServer;
 
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 
 /**
  * Keeps key configuration state for MemoryImpl and BufferImpl plus some common static variables
@@ -48,9 +49,6 @@ public abstract class BaseStateImpl implements BaseState {
   public static final long LONG_SHIFT      = 3;
   public static final long FLOAT_SHIFT     = 2;
   public static final long DOUBLE_SHIFT    = 3;
-
-  public static final ByteOrder NATIVE_BYTE_ORDER = ByteOrder.nativeOrder();
-  public static final ByteOrder NON_NATIVE_BYTE_ORDER;
 
   //class type IDs.
   // 0000 0XXX
@@ -83,15 +81,30 @@ public abstract class BaseStateImpl implements BaseState {
     final int[] p = parseJavaVersion(jdkVer);
     JDK = p[0] + "." + p[1];
     JDK_MAJOR = (p[0] == 1) ? p[1] : p[0];
-
-    NON_NATIVE_BYTE_ORDER = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
-        ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
   }
 
   public BaseStateImpl(final MemorySegment seg, final int typeId) {
     this.seg = seg;
     this.typeId = typeId;
   }
+
+  @Override
+  public void force() { seg.force(); }
+
+  @Override
+  public void load() { seg.load(); }
+
+  @Override
+  public void unload() { seg.unload(); }
+
+  @Override
+  public boolean isLoaded() { return seg.isLoaded(); }
+
+  @Override
+  public ResourceScope scope() { return seg.scope(); }
+
+  @Override
+  public boolean isAlive() { return seg.scope().isAlive(); }
 
   /**
    * Assert the requested offset and length against the allocated size.
@@ -133,8 +146,6 @@ public abstract class BaseStateImpl implements BaseState {
       }
     }
   }
-
-  //Byte Order Related
 
   @Override
   public final ByteOrder getTypeByteOrder() {
@@ -386,19 +397,19 @@ public abstract class BaseStateImpl implements BaseState {
   public static int[] parseJavaVersion(final String jdkVer) {
     final int p0, p1;
     try {
-      String[] parts = jdkVer.trim().split("[^0-9\\.]");//grab only number groups and "."
+      String[] parts = jdkVer.trim().split("\\.");//grab only number groups and "."
       parts = parts[0].split("\\."); //split out the number groups
       p0 = Integer.parseInt(parts[0]); //the first number group
       p1 = (parts.length > 1) ? Integer.parseInt(parts[1]) : 0; //2nd number group, or 0
     } catch (final NumberFormatException | ArrayIndexOutOfBoundsException  e) {
       throw new IllegalArgumentException("Improper Java -version string: " + jdkVer + "\n" + e);
     }
-    checkJavaVersion(jdkVer, p0, p1);
+    checkJavaVersion(jdkVer, p0);
     return new int[] {p0, p1};
   }
 
-  public static void checkJavaVersion(final String jdkVer, final int p0, final int p1) {
-    if ( (p0 < 1) || ((p0 == 1) && (p1 < 8)) || (p0 > 13)  ) {
+  public static void checkJavaVersion(final String jdkVer, final int p0) {
+    if ( p0 != 17 ) {
       throw new IllegalArgumentException(
           "Unsupported JDK Major Version, must be 17; " + jdkVer);
     }

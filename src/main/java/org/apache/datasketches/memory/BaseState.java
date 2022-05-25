@@ -23,8 +23,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import jdk.incubator.foreign.MemorySegment;
-
-//import org.apache.datasketches.memory.internal.BaseStateImpl;
+import jdk.incubator.foreign.ResourceScope;
 
 /**
  * Keeps key configuration state for Memory and Buffer plus some common static variables
@@ -32,20 +31,62 @@ import jdk.incubator.foreign.MemorySegment;
  *
  * @author Lee Rhodes
  */
-public interface BaseState {
+public interface BaseState extends AutoCloseable {
 
   /**
    * The java line separator character as a String.
    */
   static final String LS = System.getProperty("line.separator");
 
+  static final ByteOrder NATIVE_BYTE_ORDER = ByteOrder.nativeOrder();
+  static final ByteOrder NON_NATIVE_BYTE_ORDER =
+      ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+      ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+
   /**
    * For off-heap segments, this closes the controlling ResourceScope. If the segment is
    * not off-heap, this does nothing.
    */
+  @Override
   void close();
 
-  //Byte Order Related
+  /**
+   * Forces any changes made to the contents of this mapped segment to be written to the storage device described
+   * by the mapped segment's file descriptor. Please refer to
+   * <a href="https://docs.oracle.com/en/java/javase/17/docs/api/jdk.incubator.foreign/jdk/incubator/foreign/MemorySegment.html#force()">force()</a>
+   */
+  void force();
+
+  /**
+   * Loads the contents of this mapped segment into physical memory. Please refer to
+   * <a href="https://docs.oracle.com/en/java/javase/17/docs/api/jdk.incubator.foreign/jdk/incubator/foreign/MemorySegment.html#load()">load()</a>
+   */
+  void load();
+
+  /**
+   * Unloads the contents of this mapped segment from physical memory. Please refer to
+   * <a href="https://docs.oracle.com/en/java/javase/17/docs/api/jdk.incubator.foreign/jdk/incubator/foreign/MemorySegment.html#unload()">unload()</a>
+   */
+  void unload();
+
+  /**
+   * Tells whether or not the contents of this mapped segment is resident in physical memory. Please refer to
+   * <a href="https://docs.oracle.com/en/java/javase/17/docs/api/jdk.incubator.foreign/jdk/incubator/foreign/MemorySegment.html#isLoaded()">isLoaded()</a>
+   * @return true if it is likely that the contents of this segment is resident in physical memory.
+   */
+  boolean isLoaded();
+
+  /**
+   * Returns the resource scope associated with this memory segment.
+   * @return the resource scope associated with this memory segment.
+   */
+  ResourceScope scope();
+
+  /**
+   * Is the underlying resource scope alive?
+   * @return true, if the underlying resource scope is alive.
+   */
+  boolean isAlive();
 
   /**
    * Gets the current Type ByteOrder.

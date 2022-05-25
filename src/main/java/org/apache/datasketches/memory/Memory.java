@@ -27,6 +27,7 @@ import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
+import org.apache.datasketches.memory.internal.Util;
 
 import jdk.incubator.foreign.MemorySegment;
 
@@ -92,6 +93,8 @@ public interface Memory extends BaseState {
       throws Exception {
     Objects.requireNonNull(file, "file must be non-null.");
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null.");
+    Util.negativeCheck(fileOffsetBytes, "fileOffsetBytes");
+    Util.negativeCheck(capacityBytes, "capacityBytes");
     if (!file.canRead()) { throw new IllegalArgumentException("file must be readable."); }
     return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, true, byteOrder);
   }
@@ -261,7 +264,6 @@ public interface Memory extends BaseState {
     final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
     return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
   }
-
 
   //PRIMITIVE getX() and getXArray()
 

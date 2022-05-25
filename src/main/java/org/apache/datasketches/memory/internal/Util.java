@@ -278,19 +278,19 @@ public final class Util {
 
   public static final void zeroCheck(final long value, final String arg) {
     if (value <= 0) {
-      throw new IllegalArgumentException("The argument '" + arg + "' may not be negative or zero.");
+      throw new IllegalArgumentException("The argument '" + arg + "' must not be negative or zero.");
     }
   }
 
   public static final void negativeCheck(final long value, final String arg) {
     if (value < 0) {
-      throw new IllegalArgumentException("The argument '" + arg + "' may not be negative.");
+      throw new IllegalArgumentException("The argument '" + arg + "' must not be negative.");
     }
   }
 
   public static final void nullCheck(final Object obj, final String arg) {
     if (obj == null) {
-      throw new IllegalArgumentException("The argument '" + arg + "' may not be null.");
+      throw new IllegalArgumentException("The argument '" + arg + "' must not be null.");
     }
   }
 
