@@ -103,6 +103,7 @@ public abstract class BaseStateImpl implements BaseState {
   @Override
   public ResourceScope scope() { return seg.scope(); }
 
+  @SuppressWarnings("resource")
   @Override
   public boolean isAlive() { return seg.scope().isAlive(); }
 

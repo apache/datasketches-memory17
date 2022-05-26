@@ -40,30 +40,28 @@ import jdk.incubator.foreign.ResourceScope;
 public class AllocateDirectMapMemoryTest {
   private static final String LS = System.getProperty("line.separator");
 
-//  @BeforeClass
-//  public void setReadOnly() {
-//    UtilTest.setGettysburgAddressFileToReadOnly();
-//  }
-
   @Test
   public void simpleMap() throws Exception {
     File file = getResourceFile("GettysburgAddress.txt");
     file.setReadOnly();
-    try (Memory mem = Memory.map(file)) {
-      mem.close();
+    Memory mem = null;
+    try (ResourceScope scope = (mem = Memory.map(file)).scope()) {
     }
+    assertFalse(mem.isAlive());
   }
 
   @Test
   public void testIllegalArguments() throws Exception {
     File file = getResourceFile("GettysburgAddress.txt");
-    try (Memory mem = Memory.map(file, -1, Integer.MAX_VALUE, ByteOrder.nativeOrder())) {
+    Memory mem = null;
+    try (ResourceScope scope = (mem = Memory.map(file, -1, Integer.MAX_VALUE, ByteOrder.nativeOrder())).scope()) {
       fail("Failed: testIllegalArgumentException: Position was negative.");
+      mem.getCapacity();
     } catch (IllegalArgumentException e) {
       //ok
     }
 
-    try (Memory mem = Memory.map(file, 0, -1, ByteOrder.nativeOrder())) {
+    try (ResourceScope scope =  (mem = Memory.map(file, 0, -1, ByteOrder.nativeOrder())).scope()) {
       fail("Failed: testIllegalArgumentException: Size was negative.");
     } catch (IllegalArgumentException e) {
       //ok
@@ -74,25 +72,26 @@ public class AllocateDirectMapMemoryTest {
   public void testMapAndMultipleClose() throws Exception {
     File file = getResourceFile("GettysburgAddress.txt");
     long memCapacity = file.length();
-    try (Memory mem = Memory.map(file, 0, memCapacity, ByteOrder.nativeOrder())) {
+    Memory mem = null;
+    try (ResourceScope scope = (mem = Memory.map(file, 0, memCapacity, ByteOrder.nativeOrder())).scope()) {
       assertEquals(memCapacity, mem.getCapacity());
-      mem.close();
-      mem.close(); //multiple closes are ok
-      mem.getByte(0); //throws
-    } catch (IllegalStateException e) {
-      //ok
+      //mem.close(); //close inside the TWR block with throw excption
+      // when the TWR block ends
     }
+    mem.close(); //multiple closes outside the TWR block are OK
+    mem.close(); // but unnecessary
   }
 
   @Test
   public void testLoad() throws Exception {
     File file = getResourceFile("GettysburgAddress.txt");
     long memCapacity = file.length();
-    try (Memory mem = Memory.map(file, 0, memCapacity, ByteOrder.nativeOrder())) {
+    Memory mem = null;
+    try (ResourceScope scope = (mem = Memory.map(file, 0, memCapacity, ByteOrder.nativeOrder())).scope()) {
       mem.load();
       assertTrue(mem.isLoaded());
-      mem.close();
     }
+    mem.close(); //OK
   }
 
   @SuppressWarnings("resource")

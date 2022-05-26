@@ -31,7 +31,7 @@ import jdk.incubator.foreign.ResourceScope;
  *
  * @author Lee Rhodes
  */
-public interface BaseState extends AutoCloseable {
+public interface BaseState /* extends AutoCloseable */ {
 
   /**
    * The java line separator character as a String.
@@ -47,7 +47,6 @@ public interface BaseState extends AutoCloseable {
    * For off-heap segments, this closes the controlling ResourceScope. If the segment is
    * not off-heap, this does nothing.
    */
-  @Override
   void close();
 
   /**
