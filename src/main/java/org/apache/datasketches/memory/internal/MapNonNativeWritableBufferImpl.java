@@ -19,8 +19,6 @@
 
 package org.apache.datasketches.memory.internal;
 
-import java.nio.ByteOrder;
-
 import org.apache.datasketches.memory.WritableBuffer;
 
 import jdk.incubator.foreign.MemorySegment;
@@ -37,14 +35,6 @@ final class MapNonNativeWritableBufferImpl extends NonNativeWritableBufferImpl {
       final MemorySegment seg,
       final int typeId) {
     super(seg, typeId);
-  }
-
-  @Override
-  BaseWritableBufferImpl toDuplicate(final boolean readOnly, final ByteOrder byteOrder) {
-    final int type = setReadOnlyType(typeId, readOnly) | DUPLICATE;
-    return Util.isNativeByteOrder(byteOrder)
-        ? new MapWritableBufferImpl(seg, type)
-        : new MapNonNativeWritableBufferImpl(seg, type);
   }
 
 }

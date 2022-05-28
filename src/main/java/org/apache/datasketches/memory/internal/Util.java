@@ -60,6 +60,7 @@ public final class Util {
    * @param byteOrder the given byte order
    * @return true if the given byteOrder is the same as the native byte order.
    */
+  //TODO Duplicate in BaseStateImpl
   public static boolean isNativeByteOrder(final ByteOrder byteOrder) {
     if (byteOrder == null) {
       throw new IllegalArgumentException("ByteOrder parameter cannot be null.");

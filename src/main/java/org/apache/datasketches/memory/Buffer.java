@@ -19,7 +19,6 @@
 
 package org.apache.datasketches.memory;
 
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Objects;
@@ -36,11 +35,12 @@ public interface Buffer extends BaseBuffer {
   //BYTE BUFFER
   /**
    * Provides a view of the given <i>ByteBuffer</i> for read-only operations.
-   * The returned <i>Buffer</i> will use the native <i>ByteOrder</i>,
-   * ignoring the byte order of the given <i>ByteBuffer</i>.
-   * This does not change the byte order of data already in the <i>ByteBuffer</i>.
-   * The view starts relative to the buffer's position (inclusive)
-   * and ends relative to the buffer's limit (exclusive).
+   * The view is of the entire ByteBuffer independent of position and limit.
+   * However, the returned <i>WritableBuffer</i> will have a position and end set to the
+   * ByteBuffer's position and limit, respectively.
+   * The returned WritableBuffer will use the native <i>ByteOrder</i>,
+   * ignoring the ByteOrder of the given ByteBuffer.
+   * This does not affect the ByteOrder of data already in the ByteBuffer.
    * @param byteBuffer the given ByteBuffer, must not be null.
    * @return a new <i>Buffer</i> for read-only operations on the given ByteBuffer.
    */
@@ -50,10 +50,12 @@ public interface Buffer extends BaseBuffer {
 
   /**
    * Provides a view of the given <i>ByteBuffer</i> for read-only operations.
-   * The returned <i>Buffer</i> will use the given <i>ByteOrder</i>,
-   * ignoring the byte order of the given <i>ByteBuffer</i>.
-   * The view starts relative to the ByteBuffer's position (inclusive)
-   * and ends relative to the ByteBuffer's limit (exclusive).
+   * The view is of the entire ByteBuffer independent of position and limit.
+   * However, the returned <i>WritableBuffer</i> will have a position and end set to the
+   * ByteBuffer's position and limit, respectively.
+   * The returned WritableBuffer will use the native <i>ByteOrder</i>,
+   * ignoring the ByteOrder of the given ByteBuffer.
+   * This does not affect the ByteOrder of data already in the ByteBuffer.
    * @param byteBuffer the given ByteBuffer, must not be null
    * @param byteOrder the ByteOrder to be used. It must be non-null.
    * @return a new <i>Buffer</i> for read-only operations on the given ByteBuffer.
@@ -61,8 +63,7 @@ public interface Buffer extends BaseBuffer {
   static Buffer wrap(ByteBuffer byteBuffer, ByteOrder byteOrder) {
     Objects.requireNonNull(byteBuffer, "byteBuffer must not be null");
     Objects.requireNonNull(byteOrder, "byteOrder must not be null");
-    ByteBuffer byteBuf = byteBuffer.asReadOnlyBuffer();
-    return BaseWritableBufferImpl.wrapByteBuffer(byteBuf, true, byteOrder);
+    return BaseWritableBufferImpl.wrapByteBuffer(byteBuffer, true, byteOrder);
   }
 
   //DUPLICATES
@@ -102,36 +103,8 @@ public interface Buffer extends BaseBuffer {
    */
   Buffer duplicate(ByteOrder byteOrder);
 
-  //MAP
-  /**
-   * Maps the given file into <i>Buffer</i> for read operations
-   * Calling this method is equivalent to calling
-   * {@link #map(File, long, long, ByteOrder) map(file, 0, file.length(), ByteOrder.nativeOrder())}.
-   * @param file the given file to map. It must be non-null, length &ge; 0, and readable.
-   * @return mapped Buffer.
-   * @throws Exception
-   */
-  static Buffer map(File file) throws Exception {
-    return map(file, 0, file.length(), ByteOrder.nativeOrder());
-  }
-
-  /**
-   * Maps the specified portion of the given file into <i>Buffer</i> for read operations.
-   * @param file the given file to map. It must be non-null,readable and length &ge; 0.
-   * @param fileOffsetBytes the position in the given file in bytes. It must not be negative.
-   * @param capacityBytes the size of the mapped memory. It must be &ge; 0.
-   * @param byteOrder the byte order to be used.  It must be non-null.
-   * @return Buffer
-   * @throws Exception
-
-   */
-  static Buffer map(File file, long fileOffsetBytes, long capacityBytes, ByteOrder byteOrder)
-      throws Exception {
-    Objects.requireNonNull(file, "file must be non-null.");
-    Objects.requireNonNull(byteOrder, "byteOrder must be non-null.");
-    if (!file.canRead()) { throw new IllegalArgumentException("file must be readable."); }
-    return BaseWritableBufferImpl.wrapMap(file, fileOffsetBytes, capacityBytes, true, byteOrder);
-  }
+  //NO MAP use Memory
+  //NO ALLOCATE DIRECT, makes no sense
 
   //REGIONS
   /**
@@ -193,7 +166,10 @@ public interface Buffer extends BaseBuffer {
    */
   Memory asMemory(ByteOrder byteOrder);
 
-  //NO WRAP - ACCESS PRIMITIVE HEAP ARRAYS for readOnly
+  //NO ALLOCATE HEAP BYTE ARRAYS, makes no sense. Use WritableMemory
+  //NO WRAP - ACCESS PRIMITIVE HEAP ARRAYS for readOnly.
+  //  Because of the ambiguity of positional API with the multibyte primitives. Use Memory instead.
+  //END OF CONSTRUCTOR-TYPE METHODS
 
   //PRIMITIVE getX() and getXArray()
 
@@ -365,7 +341,9 @@ public interface Buffer extends BaseBuffer {
    */
   void getShortArray(short[] dstArray, int dstOffsetShorts, int lengthShorts);
 
-  //SPECIAL PRIMITIVE READ METHODS: compareTo
+  //SPECIAL PRIMITIVE READ METHODS: compareTo.
+  //   No copyTo, No writeTo. Use Memory for that.
+
   /**
    * Compares the bytes of this Buffer to <i>that</i> Buffer.
    * This uses absolute offsets not the start, position and end.

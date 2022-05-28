@@ -27,6 +27,7 @@ import java.nio.ByteOrder;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.MemoryRequestServer;
 
+import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
 
@@ -237,21 +238,27 @@ public abstract class BaseStateImpl implements BaseState {
 
   @Override
   public final boolean isSameResource(final Object that) {
-    return (this == that);
+    if (this == that) { return true; }
+    final MemoryAddress myAdd = seg.address();
+    if (that instanceof BaseStateImpl) {
+      final MemoryAddress thatAdd = ((BaseStateImpl)that).seg.address();
+      return (myAdd.equals(thatAdd));
+    }
+    return false;
   }
 
   //TYPE ID Management
 
   @Override
   public final boolean isReadOnly() {
-    return (getTypeId() & READONLY) > 0;
+    return ((getTypeId() & READONLY) > 0) || seg.isReadOnly();
   }
 
   final static int setReadOnlyType(final int type, final boolean readOnly) {
     return (type & ~READONLY) | (readOnly ? READONLY : 0);
   }
 
-  final boolean isRegionType() {
+  final boolean isRegionType() { //
     return (getTypeId() & REGION) > 0;
   }
 
@@ -259,15 +266,15 @@ public abstract class BaseStateImpl implements BaseState {
     return (getTypeId() & DUPLICATE) > 0;
   }
 
-  final boolean isMemoryType() {
+  final boolean isMemoryType() { //
     return (getTypeId() & BUFFER) == 0;
   }
 
-  final boolean isBufferType() {
+  final boolean isBufferType() { //
     return (getTypeId() & BUFFER) > 0;
   }
 
-  final boolean isNativeType() {
+  final boolean isNativeType() { //
     return (getTypeId() & NONNATIVE) == 0;
   }
 
@@ -275,15 +282,15 @@ public abstract class BaseStateImpl implements BaseState {
     return (getTypeId() & NONNATIVE) > 0;
   }
 
-  final boolean isHeapType() {
+  final boolean isHeapType() { //
     return (getTypeId() >>> 3 & 3) == 0;
   }
 
-  final boolean isDirectType() {
+  final boolean isDirectType() { //
     return (getTypeId() & DIRECT) > 0;
   }
 
-  final boolean isMapType() {
+  final boolean isMapType() { //
     return (getTypeId() & MAP) > 0;
   }
 
@@ -301,27 +308,30 @@ public abstract class BaseStateImpl implements BaseState {
     final StringBuilder sb = new StringBuilder();
     final int group1 = typeId & 0x7;
     switch (group1) {
-      case 1 : sb.append("ReadOnly, "); break;
-      case 2 : sb.append("Region, "); break;
-      case 3 : sb.append("ReadOnly Region, "); break;
-      case 4 : sb.append("Duplicate, "); break;
-      case 5 : sb.append("ReadOnly Duplicate, "); break;
-      case 6 : sb.append("Region Duplicate, "); break;
-      case 7 : sb.append("ReadOnly Region Duplicate, "); break;
+      case 0 : sb.append("Writable:\t"); break;
+      case 1 : sb.append("ReadOnly:\t"); break;
+      case 2 : sb.append("Writable:\tRegion:\t"); break;
+      case 3 : sb.append("ReadOnly:\tRegion:\t"); break;
+      case 4 : sb.append("Writable:\tDuplicate:\t"); break;
+      case 5 : sb.append("ReadOnly:\tDuplicate:\t"); break;
+      case 6 : sb.append("Writable:\tRegion:\tDuplicate:\t"); break;
+      case 7 : sb.append("ReadOnly:\tRegion:\tDuplicate:\t"); break;
       default: break;
     }
     final int group2 = (typeId >>> 3) & 0x3;
     switch (group2) {
-      case 0 : sb.append("Heap, "); break;
-      case 1 : sb.append("Direct, "); break;
-      case 2 : sb.append("Map, "); break;
+      case 0 : sb.append("Heap:\t"); break;
+      case 1 : sb.append("Direct:\t"); break;
+      case 2 : sb.append("Map:\t"); break;
+      case 3 : sb.append("Direct:\tMap:\t"); break;
       default: break;
     }
-    if ((typeId & BYTEBUF) > 0) { sb.append("ByteBuffer, "); }
+    if ((typeId & BYTEBUF) > 0) { sb.append("ByteBuffer:\t"); }
+
     final int group3 = (typeId >>> 5) & 0x1;
     switch (group3) {
-      case 0 : sb.append("Native, "); break;
-      case 1 : sb.append("NonNative, "); break;
+      case 0 : sb.append("NativeOrder:\t"); break;
+      case 1 : sb.append("NonNativeOrder:\t"); break;
       default: break;
     }
     final int group4 = (typeId >>> 6) & 0x1;
@@ -334,57 +344,57 @@ public abstract class BaseStateImpl implements BaseState {
   }
 
   @Override
-  public final String toHexString(final String header, final long offsetBytes,
-      final int lengthBytes) {
-    final String klass = this.getClass().getSimpleName();
-    final String s1 = String.format("(..., %d, %d)", offsetBytes, lengthBytes);
-    final long hcode = hashCode() & 0XFFFFFFFFL;
-    final String call = ".toHexString" + s1 + ", hashCode: " + hcode;
-    final StringBuilder sb = new StringBuilder();
-    sb.append("### ").append(klass).append(" SUMMARY ###").append(LS);
-    sb.append("Header Comment      : ").append(header).append(LS);
-    sb.append("Call Parameters     : ").append(call);
-    return toHex(this, sb.toString(), offsetBytes, lengthBytes);
+  public final String toHexString(final String comment, final long offsetBytes, final int lengthBytes,
+      final boolean withData) {
+    return toHex(this, comment, offsetBytes, lengthBytes, withData);
   }
 
   /**
    * Returns a formatted hex string of an area of this object.
    * Used primarily for testing.
    * @param state the BaseStateImpl
-   * @param preamble a descriptive header
+   * @param comment optional unique description
    * @param offsetBytes offset bytes relative to the MemoryImpl start
    * @param lengthBytes number of bytes to convert to a hex string
    * @return a formatted hex string in a human readable array
    */
-  static final String toHex(final BaseStateImpl state, final String preamble, final long offsetBytes,
-      final int lengthBytes) {
+  static final String toHex(final BaseStateImpl state, final String comment, final long offsetBytes,
+      final int lengthBytes, final boolean withData) {
     final MemorySegment seg = state.seg;
     final long capacity = seg.byteSize();
     checkBounds(offsetBytes, lengthBytes, capacity);
     final StringBuilder sb = new StringBuilder();
-    final String segHCStr = "" + (seg.hashCode() & 0XFFFFFFFFL);
+    final String theComment = (comment != null) ? comment : "";
+    final String addHCStr = "" + Integer.toHexString(seg.address().hashCode());
     final MemoryRequestServer memReqSvr = state.getMemoryRequestServer();
     final String memReqStr = memReqSvr != null
-        ? memReqSvr.getClass().getSimpleName() + ", " + (memReqSvr.hashCode() & 0XFFFFFFFFL)
+        ? memReqSvr.getClass().getSimpleName() + ", " + Integer.toHexString(memReqSvr.hashCode())
         : "null";
-    sb.append(preamble).append(LS);
-    sb.append("MemorySegment hashCode : ").append(segHCStr).append(LS);
+
+    sb.append(LS + "### DataSketches Memory Component SUMMARY ###").append(LS);
+    sb.append("Optional Comment       : ").append(theComment).append(LS);
+    sb.append("TypeId String          : ").append(typeDecode(state.typeId)).append(LS);
+    sb.append("OffsetBytes            : ").append(offsetBytes).append(LS);
+    sb.append("LengthBytes            : ").append(lengthBytes).append(LS);
     sb.append("Capacity               : ").append(capacity).append(LS);
+    sb.append("MemoryAddress hashCode : ").append(addHCStr).append(LS);
     sb.append("MemReqSvr, hashCode    : ").append(memReqStr).append(LS);
     sb.append("Read Only              : ").append(state.isReadOnly()).append(LS);
     sb.append("Type Byte Order        : ").append(state.getTypeByteOrder().toString()).append(LS);
     sb.append("Native Byte Order      : ").append(ByteOrder.nativeOrder().toString()).append(LS);
     sb.append("JDK Runtime Version    : ").append(JDK).append(LS);
     //Data detail
-    sb.append("Data, littleEndian  :  0  1  2  3  4  5  6  7");
-
-    for (long i = 0; i < lengthBytes; i++) {
-      final int b = getByteAtOffset(seg, offsetBytes + i) & 0XFF;
-      if (i % 8 == 0) { //row header
-        sb.append(String.format("%n%20s: ", offsetBytes + i));
+    if (withData) {
+      sb.append("Data, LittleEndian     :  0  1  2  3  4  5  6  7");
+      for (long i = 0; i < lengthBytes; i++) {
+        final int b = getByteAtOffset(seg, offsetBytes + i) & 0XFF;
+        if (i % 8 == 0) { //row header
+          sb.append(String.format("%n%23s: ", offsetBytes + i));
+        }
+        sb.append(String.format("%02x ", b));
       }
-      sb.append(String.format("%02x ", b));
     }
+    sb.append(LS + "### END SUMMARY ###");
     sb.append(LS);
 
     return sb.toString();

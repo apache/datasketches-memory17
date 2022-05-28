@@ -36,11 +36,12 @@ public interface WritableBuffer extends Buffer {
   //BYTE BUFFER
   /**
    * Provides a view of the given <i>ByteBuffer</i> for write operations.
-   * The returned <i>WritableBuffer</i> will use the native <i>ByteOrder</i>,
-   * ignoring the byte order of the given <i>ByteBuffer</i>.
-   * This does not change the byte order of data already in the <i>ByteBuffer</i>.
-   * The view starts relative to the ByteBuffer's position (inclusive)
-   * and ends relative to the ByteBuffer's limit (exclusive).
+   * The view is of the entire ByteBuffer independent of position and limit.
+   * However, the returned <i>WritableBuffer</i> will have a position and end set to the
+   * ByteBuffer's position and limit, respectively.
+   * The returned WritableBuffer will use the native <i>ByteOrder</i>,
+   * ignoring the ByteOrder of the given ByteBuffer.
+   * This does not affect the ByteOrder of data already in the ByteBuffer.
    * @param byteBuffer the given ByteBuffer. It must be non-null and writable.
    * @return a new <i>WritableBuffer</i> for write operations on the given <i>ByteBuffer</i>.
    */
@@ -50,11 +51,12 @@ public interface WritableBuffer extends Buffer {
 
   /**
    * Provides a view of the given <i>ByteBuffer</i> for write operations.
-   * The returned <i>WritableBuffer</i> will use the given <i>ByteOrder</i>,
-   * ignoring the byte order of the given <i>ByteBuffer</i>.
-   * However, this does not change the byte order of data already in the <i>ByteBuffer</i>.
-   * The view starts relative to the ByteBuffer's position (inclusive)
-   * and ends relative to the ByteBuffer's limit (exclusive).
+   * The view is of the entire ByteBuffer independent of position and limit.
+   * However, the returned <i>WritableBuffer</i> will have a position and end set to the
+   * ByteBuffer's position and limit, respectively.
+   * The returned WritableBuffer will use the native <i>ByteOrder</i>,
+   * ignoring the ByteOrder of the given ByteBuffer.
+   * This does not affect the ByteOrder of data already in the ByteBuffer.
    * @param byteBuffer the given ByteBuffer. It must be non-null and writable.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return a new <i>WritableBuffer</i> for write operations on the given <i>ByteBuffer</i>.
@@ -65,9 +67,6 @@ public interface WritableBuffer extends Buffer {
     if (byteBuffer.isReadOnly()) { throw new ReadOnlyException("ByteBuffer must be writable."); }
     return BaseWritableBufferImpl.wrapByteBuffer(byteBuffer, false, byteOrder);
   }
-
-  // NO MAP
-  // NO ALLOCATE DIRECT
 
   //DUPLICATES
   /**
@@ -104,6 +103,9 @@ public interface WritableBuffer extends Buffer {
    * <i>start</i>, <i>position</i> and <i>end</i>.
    */
   WritableBuffer writableDuplicate(ByteOrder byteOrder);
+
+  // NO MAP use WritableMemory
+  // NO ALLOCATE DIRECT use WritableMemory
 
   //REGIONS
   /**
@@ -166,9 +168,10 @@ public interface WritableBuffer extends Buffer {
    */
   WritableMemory asWritableMemory(ByteOrder byteOrder);
 
-  //NO ALLOCATE HEAP VIA AUTOMATIC BYTE ARRAY
-
+  //NO ALLOCATE HEAP BYTE ARRAY use WritableMemory
+  //NO WRITABLE WRAP -- ACCESS PRIMITIVE HEAP ARRAYS for WRITE
   //NO ACCESS PRIMITIVE HEAP ARRAYS for WRITE
+  //END OF CONSTRUCTOR-TYPE METHODS
 
   //PRIMITIVE putX() and putXArray()
 
@@ -362,6 +365,6 @@ public interface WritableBuffer extends Buffer {
 
   //NO setBits(...)
 
-  //OTHER WRITABLE API METHODS
+  //NO OTHER WRITABLE API METHODS
 
 }

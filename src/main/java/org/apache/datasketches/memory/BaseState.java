@@ -212,13 +212,14 @@ public interface BaseState /* extends AutoCloseable */ {
   //TO STRING
 
   /**
-   * Returns a formatted hex string of a range of this object.
-   * Used primarily for testing.
-   * @param header a descriptive header
+   * Returns a description of this object with an optional formatted hex string of the data
+   * for the specified a range. Used primarily for testing.
+   * @param comment a description
    * @param offsetBytes offset bytes relative to this object start
    * @param lengthBytes number of bytes to convert to a hex string
-   * @return a formatted hex string in a human readable array
+   * @param withData include output listing of byte data in the given range
+   * @return a description and hex output in a human readable format.
    */
-  String toHexString(String header, long offsetBytes, int lengthBytes);
+  String toHexString(String comment, long offsetBytes, int lengthBytes, boolean withData);
 
 }

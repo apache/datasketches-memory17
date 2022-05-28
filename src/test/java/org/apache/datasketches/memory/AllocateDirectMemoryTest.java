@@ -35,17 +35,17 @@ public class AllocateDirectMemoryTest {
   public void simpleAllocateDirect() {
     int longs = 32;
     WritableMemory wMem = null;
-    try (ResourceScope scope = (wMem = WritableMemory.allocateDirect(longs << 3, memReqSvr)).scope()) {
+    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+      wMem = WritableMemory.allocateDirect(longs << 3, scope, memReqSvr);
       for (int i = 0; i<longs; i++) {
         wMem.putLong(i << 3, i);
         assertEquals(wMem.getLong(i << 3), i);
       }
-      //inside the TWR block the memory scope should be alive
+      //inside the TWR block the memory scope will be alive
       assertTrue(wMem.isAlive());
     }
     //The TWR block has exited, so the memory should be invalid
     assertFalse(wMem.isAlive());
-    wMem.close();
   }
 
   @Test
@@ -53,13 +53,14 @@ public class AllocateDirectMemoryTest {
     int longs1 = 32;
     int bytes1 = longs1 << 3;
     WritableMemory wmem = null;
-    try (ResourceScope scope = (wmem = WritableMemory.allocateDirect(bytes1, memReqSvr)).scope()) {
+    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+      wmem = WritableMemory.allocateDirect(bytes1, scope, memReqSvr);
 
       for (int i = 0; i < longs1; i++) { //puts data in origWmem
         wmem.putLong(i << 3, i);
         assertEquals(wmem.getLong(i << 3), i);
       }
-      println(wmem.toHexString("Test", 0, 32 * 8));
+      println(wmem.toHexString("Test", 0, 32 * 8, true));
 
       int longs2 = 64;
       int bytes2 = longs2 << 3;
@@ -67,43 +68,37 @@ public class AllocateDirectMemoryTest {
       if (memReqSvr == null) {
         memReqSvr = new DefaultMemoryRequestServer();
       }
-      WritableMemory newWmem = memReqSvr.request(wmem, bytes2);
+      WritableMemory newWmem = memReqSvr.request(wmem, bytes2); //on the heap
       assertFalse(newWmem.isDirect()); //on heap by default
       for (int i = 0; i < longs2; i++) {
           newWmem.putLong(i << 3, i);
           assertEquals(newWmem.getLong(i << 3), i);
       }
-      memReqSvr.requestClose(wmem, newWmem);
-      //The default MRS doesn't actually release because it could be easily misused.
-    } // So we let the TWR release it here
+      memReqSvr.requestClose(wmem, newWmem); //The default MRS doesn't close.
+    } // So we let the TWR close it here
   }
 
   @SuppressWarnings("resource")
   @Test
   public void checkNonNativeDirect() {
     WritableMemory wmem = null;
-    try (ResourceScope scope = (wmem =
-        WritableMemory.allocateDirect(
-            128,
-            8,
-            ResourceScope.newConfinedScope(),
-            BaseState.NON_NATIVE_BYTE_ORDER,
-            memReqSvr)).scope()) {
+    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+      wmem = WritableMemory.allocateDirect( 128, 8, scope,
+          BaseState.NON_NATIVE_BYTE_ORDER,
+          memReqSvr);
       wmem.putChar(0, (char) 1);
       assertEquals(wmem.getByte(1), (byte) 1);
     }
   }
 
+  @SuppressWarnings("resource")
   @Test
   public void checkExplicitCloseNoTWR() {
     final long cap = 128;
     WritableMemory wmem = null;
-    try {
-      wmem = WritableMemory.allocateDirect(cap, memReqSvr);
-      wmem.close(); //explicit close
-    } catch (final Exception e) {
-      throw e;
-    }
+    ResourceScope scope = ResourceScope.newConfinedScope();
+    wmem = WritableMemory.allocateDirect(cap, scope, memReqSvr);
+    wmem.close(); //explicit close
   }
 
   @Test

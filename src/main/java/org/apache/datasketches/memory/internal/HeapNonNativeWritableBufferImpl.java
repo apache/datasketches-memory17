@@ -19,8 +19,6 @@
 
 package org.apache.datasketches.memory.internal;
 
-import java.nio.ByteOrder;
-
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableBuffer;
 
@@ -40,14 +38,6 @@ final class HeapNonNativeWritableBufferImpl extends NonNativeWritableBufferImpl 
       final MemoryRequestServer memReqSvr) {
     super(seg, typeId);
     if (memReqSvr != null) { setMemoryRequestServer(memReqSvr); }
-  }
-
-  @Override
-  BaseWritableBufferImpl toDuplicate(final boolean readOnly, final ByteOrder byteOrder) {
-    final int type = setReadOnlyType(typeId, readOnly) | DUPLICATE;
-    return Util.isNativeByteOrder(byteOrder)
-        ? new HeapWritableBufferImpl(seg, type, memReqSvr)
-        : new HeapNonNativeWritableBufferImpl(seg, type, memReqSvr);
   }
 
 }

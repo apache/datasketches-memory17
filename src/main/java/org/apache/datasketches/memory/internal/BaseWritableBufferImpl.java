@@ -19,14 +19,8 @@
 
 package org.apache.datasketches.memory.internal;
 
-import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
-import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
-
-import java.io.File;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.FileChannel;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.Buffer;
@@ -38,7 +32,6 @@ import org.apache.datasketches.memory.WritableMemory;
 
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
 
 /*
  * Developer notes: The heavier methods, such as put/get arrays, duplicate, region, clear, fill,
@@ -60,16 +53,16 @@ import jdk.incubator.foreign.ResourceScope;
 @SuppressWarnings("restriction")
 public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements WritableBuffer {
 
-  //Pass-through ctor
+  //Pass-through constructor
   BaseWritableBufferImpl(
       final MemorySegment seg,
       final int typeId) {
     super(seg, typeId);
   }
 
-  //HEAP
+  //HEAP ARRAYS
 
-  public static WritableBuffer wrapSegment(
+  public static WritableBuffer wrapSegmentAsArray(
       final MemorySegment seg,
       final ByteOrder byteOrder,
       final MemoryRequestServer memReqSvr) {
@@ -90,54 +83,28 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
       final ByteBuffer byteBuffer,
       final boolean localReadOnly,
       final ByteOrder byteOrder) {
-    ByteBuffer byteBuf = localReadOnly ? byteBuffer.asReadOnlyBuffer() : byteBuffer;
-    MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from Position to limit
+    final ByteBuffer byteBuf = localReadOnly ? byteBuffer.asReadOnlyBuffer() : byteBuffer.duplicate();
+    byteBuf.clear(); //resets position to zero and limit to capacity. Does not clear data.
+    MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
     int type = BUFFER | BYTEBUF
         | (localReadOnly ? READONLY : 0)
         | (seg.isMapped() ? MAP : 0)
         | (seg.isNative() ? DIRECT : 0);
     if (byteOrder == ByteOrder.nativeOrder()) {
       type |= NATIVE;
-      return new BBWritableBufferImpl(seg, type);
+      final WritableBuffer wbuf = new BBWritableBufferImpl(seg, type);
+      wbuf.setStartPositionEnd(0, byteBuffer.position(), byteBuffer.limit());
+      return wbuf;
     }
     type |= NONNATIVE;
-    return new BBNonNativeWritableBufferImpl(seg, type);
+    final WritableBuffer wbuf = new BBNonNativeWritableBufferImpl(seg, type);
+    wbuf.setStartPositionEnd(0, byteBuffer.position(), byteBuffer.limit());
+    return wbuf;
   }
 
-  //MAP
-  /**
-   * The static constructor that chooses the correct Map leaf node based on the byte order.
-   * @param file the file being wrapped. It must be non-null with length &gt; 0.
-   * @param fileOffsetBytes the file offset bytes
-   * @param capacityBytes the requested capacity of the memory mapped region. It must be &gt; 0
-   * @param localReadOnly the requested read-only state
-   * @param byteOrder the requested byte-order
-   * @return this class constructed via the leaf node.
-   * @throws Exception
-   */
-  @SuppressWarnings("resource")
-  public static WritableBuffer wrapMap(final File file, final long fileOffsetBytes,
-      final long capacityBytes, final boolean localReadOnly, final ByteOrder byteOrder)
-      throws Exception {
-    Objects.requireNonNull(file, "File must be non-null");
-    Objects.requireNonNull(byteOrder, "ByteOrder must be non-null");
-    FileChannel.MapMode mapMode = (localReadOnly) ? READ_ONLY : READ_WRITE;
-    MemorySegment seg;
-    try {
-      seg = MemorySegment.mapFile(file.toPath(), fileOffsetBytes, capacityBytes, mapMode,
-            ResourceScope.newConfinedScope()); }
-    catch (final IllegalArgumentException | IllegalStateException | UnsupportedOperationException
-        | IOException | SecurityException e) { throw e; }
-    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
-    final int type = BUFFER | MAP | DIRECT
-        | (localReadOnly ? READONLY : 0)
-        | (nativeBOType ? NATIVE : NONNATIVE);
-    return Util.isNativeByteOrder(byteOrder)
-        ? new MapWritableBufferImpl(seg, type)
-        : new MapNonNativeWritableBufferImpl(seg, type);
-  }
-
+  //NO MAP
   //NO DIRECTS
+
   //REGIONS
 
   @Override
@@ -158,9 +125,12 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
       final long capacityBytes,
       final boolean localReadOnly,
       final ByteOrder byteOrder) {
+    if (!this.isAlive()) { throw new IllegalStateException("This Buffer is not alive."); }
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null.");
-    final boolean readOnly = isReadOnly() || localReadOnly || seg.isReadOnly();
-    final MemorySegment slice = seg.asSlice(offsetBytes, capacityBytes);
+    final boolean readOnly = isReadOnly() || localReadOnly;
+    final MemorySegment slice = (readOnly && !seg.isReadOnly())
+        ? seg.asSlice(offsetBytes, capacityBytes).asReadOnly()
+        : seg.asSlice(offsetBytes, capacityBytes);
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
@@ -193,12 +163,12 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   //DUPLICATES
   @Override
   public Buffer duplicate() {
-    return writableDuplicateImpl(true, getTypeByteOrder());
+    return toWritableDuplicateImpl(true, getTypeByteOrder());
   }
 
   @Override
   public Buffer duplicate(final ByteOrder byteOrder) {
-    return writableDuplicateImpl(true, byteOrder);
+    return toWritableDuplicateImpl(true, byteOrder);
   }
 
   @Override
@@ -206,7 +176,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     if (isReadOnly()) {
       throw new ReadOnlyException("Cannot create a writable duplicate from a read-only Buffer.");
     }
-    return writableDuplicateImpl(false, getTypeByteOrder());
+    return toWritableDuplicateImpl(false, getTypeByteOrder());
   }
 
   @Override
@@ -214,22 +184,63 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     if (isReadOnly()) {
       throw new ReadOnlyException("Cannot create a writable duplicate from a read-only Buffer.");
     }
-    return writableDuplicateImpl(false, byteOrder);
+    return toWritableDuplicateImpl(false, byteOrder);
   }
 
-  private WritableBuffer writableDuplicateImpl(final boolean localReadOnly, final ByteOrder byteOrder) {
+  private WritableBuffer toWritableDuplicateImpl(final boolean localReadOnly, final ByteOrder byteOrder) {
+    if (!this.isAlive()) { throw new IllegalStateException("This Memory is not alive."); }
     final boolean readOnly = isReadOnly() || localReadOnly;
-    final WritableBuffer wbuf = toDuplicate(readOnly, byteOrder);
+    final MemorySegment seg2 = (readOnly && !seg.isReadOnly()) ? seg.asReadOnly() : seg;
+    final boolean duplicateType = true;
+    final boolean mapType = seg.isMapped();
+    final boolean directType = seg.isNative();
+    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
+    final boolean byteBufferType = isByteBufferType();
+    final int type = BUFFER
+        | (readOnly ? READONLY : 0)
+        | (duplicateType ? DUPLICATE : 0)
+        | (mapType ? MAP : 0)
+        | (directType ? DIRECT : 0)
+        | (nativeBOType ? NATIVE : NONNATIVE)
+        | (byteBufferType ? BYTEBUF : 0);
+
+    WritableBuffer wbuf;
+    if (byteBufferType) {
+      if (nativeBOType) {
+        wbuf = new BBWritableBufferImpl(seg2, type);
+      } else {
+        wbuf = new BBNonNativeWritableBufferImpl(seg2, type);
+      }
+    }
+    if (mapType) {
+      if (nativeBOType) {
+        wbuf = new MapWritableBufferImpl(seg2, type);
+      } else {
+        wbuf = new MapNonNativeWritableBufferImpl(seg2, type);
+      }
+    }
+    if (directType) {
+      if (nativeBOType) {
+        wbuf = new DirectWritableBufferImpl(seg2, type, memReqSvr);
+      } else {
+        wbuf = new DirectNonNativeWritableBufferImpl(seg2, type, memReqSvr);
+      }
+    }
+    //else heap type
+    if (nativeBOType) {
+      wbuf = new HeapWritableBufferImpl(seg2, type, memReqSvr);
+    } else {
+      wbuf = new HeapNonNativeWritableBufferImpl(seg2, type, memReqSvr);
+    }
     wbuf.setStartPositionEnd(getStart(), getPosition(), getEnd());
     return wbuf;
   }
 
-  abstract BaseWritableBufferImpl toDuplicate(boolean readOnly, ByteOrder byteOrder);
-
   //AS MEMORY
+
   @Override
   public Memory asMemory(final ByteOrder byteOrder) {
-    return asWritableMemory(true, byteOrder);
+    return asWritableMemoryImpl(true, byteOrder);
   }
 
   @Override
@@ -238,12 +249,14 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
       throw new ReadOnlyException(
           "Cannot create a writable Memory from a read-only Buffer.");
     }
-    return asWritableMemory(false, byteOrder);
+    return asWritableMemoryImpl(false, byteOrder);
   }
 
-  private WritableMemory asWritableMemory(final boolean localReadOnly, final ByteOrder byteOrder) {
+  private WritableMemory asWritableMemoryImpl(final boolean localReadOnly, final ByteOrder byteOrder) {
+    if (!this.isAlive()) { throw new IllegalStateException("This Buffer is not alive."); }
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
     final boolean readOnly = isReadOnly() || localReadOnly;
+    final MemorySegment seg2 = (readOnly && !seg.isReadOnly()) ? seg.asReadOnly() : seg;
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
@@ -259,30 +272,30 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     WritableMemory wmem;
     if (byteBufferType) {
       if (nativeBOType) {
-        wmem = new BBWritableMemoryImpl(seg, type);
+        wmem = new BBWritableMemoryImpl(seg2, type);
       } else {
-        wmem = new BBNonNativeWritableMemoryImpl(seg, type);
+        wmem = new BBNonNativeWritableMemoryImpl(seg2, type);
       }
     }
     if (mapType) {
       if (nativeBOType) {
-        wmem = new MapWritableMemoryImpl(seg, type);
+        wmem = new MapWritableMemoryImpl(seg2, type);
       } else {
-        wmem = new MapNonNativeWritableMemoryImpl(seg, type);
+        wmem = new MapNonNativeWritableMemoryImpl(seg2, type);
       }
     }
     if (directType) {
       if (nativeBOType) {
-        wmem = new DirectWritableMemoryImpl(seg, type, memReqSvr);
+        wmem = new DirectWritableMemoryImpl(seg2, type, memReqSvr);
       } else {
-        wmem = new DirectNonNativeWritableMemoryImpl(seg, type, memReqSvr);
+        wmem = new DirectNonNativeWritableMemoryImpl(seg2, type, memReqSvr);
       }
     }
     //else heap type
     if (nativeBOType) {
-      wmem = new HeapWritableMemoryImpl(seg, type, memReqSvr);
+      wmem = new HeapWritableMemoryImpl(seg2, type, memReqSvr);
     } else {
-      wmem = new HeapNonNativeWritableMemoryImpl(seg, type, memReqSvr);
+      wmem = new HeapNonNativeWritableMemoryImpl(seg2, type, memReqSvr);
     }
     return wmem;
   }
@@ -312,53 +325,8 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     setPosition(pos + lengthBytes);
   }
 
-  //PRIMITIVE getX() Native Endian (used by both endians)
+  //OTHER PRIMITIVE READ METHODS: copyTo, compareTo. No writeTo
 
-  final char getNativeOrderedChar() {
-    final long pos = getPosition();
-    final char aChar = MemoryAccess.getCharAtOffset(seg, pos);
-    setPosition(pos + Character.BYTES);
-    return aChar;
-  }
-
-  final char getNativeOrderedChar(final long offsetBytes) {
-    return MemoryAccess.getCharAtOffset(seg, offsetBytes);
-  }
-
-  final int getNativeOrderedInt() {
-    final long pos = getPosition();
-    final int anInt = MemoryAccess.getIntAtOffset(seg, pos);
-    setPosition(pos + Integer.BYTES);
-    return anInt;
-  }
-
-  final int getNativeOrderedInt(final long offsetBytes) {
-    return MemoryAccess.getIntAtOffset(seg, offsetBytes);
-  }
-
-  final long getNativeOrderedLong() {
-    final long pos = getPosition();
-    final long aLong = MemoryAccess.getLongAtOffset(seg, pos);
-    setPosition(pos + Long.BYTES);
-    return aLong;
-  }
-
-  final long getNativeOrderedLong(final long offsetBytes) {
-    return MemoryAccess.getLongAtOffset(seg, offsetBytes);
-  }
-
-  final short getNativeOrderedShort() {
-    final long pos = getPosition();
-    final short aShort = MemoryAccess.getShortAtOffset(seg, pos);
-    setPosition(pos + Short.BYTES);
-    return aShort;
-  }
-
-  final short getNativeOrderedShort(final long offsetBytes) {
-    return MemoryAccess.getShortAtOffset(seg, offsetBytes);
-  }
-
-  //OTHER PRIMITIVE READ METHODS: copyTo, compareTo
   @Override
   public final int compareTo(final long thisOffsetBytes, final long thisLengthBytes,
       final Buffer that, final long thatOffsetBytes, final long thatLengthBytes) {
@@ -367,8 +335,8 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   }
 
   /*
-   * Develper notes: There is no copyTo for Buffers because of the ambiguity of what to do with
-   * the positional values. Switch to MemoryImpl view to do copyTo.
+   * Developer notes: There is no copyTo for Buffers because of the ambiguity of what to do with
+   * the positional values. Switch to asMemory view to do copyTo.
    */
 
   //PRIMITIVE putX() and putXArray() implementations
@@ -393,47 +361,6 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     MemorySegment dstSlice = seg.asSlice(pos, lengthBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + lengthBytes);
-  }
-
-  //PRIMITIVE putX() Native Endian (used by both endians)
-  final void putNativeOrderedChar(final char value) {
-    final long pos = getPosition();
-    MemoryAccess.setCharAtOffset(seg, pos, value);
-    setPosition(pos + Character.BYTES);
-  }
-
-  final void putNativeOrderedChar(final long offsetBytes, final char value) {
-    MemoryAccess.setCharAtOffset(seg, offsetBytes, value);
-  }
-
-  final void putNativeOrderedInt(final int value) {
-    final long pos = getPosition();
-    MemoryAccess.setIntAtOffset(seg, pos, value);
-    setPosition(pos + Integer.BYTES);
-  }
-
-  final void putNativeOrderedInt(final long offsetBytes, final int value) {
-    MemoryAccess.setIntAtOffset(seg, offsetBytes, value);
-  }
-
-  final void putNativeOrderedLong(final long value) {
-    final long pos = getPosition();
-    MemoryAccess.setLongAtOffset(seg, pos, value);
-    setPosition(pos + Long.BYTES);
-  }
-
-  final void putNativeOrderedLong(final long offsetBytes, final long value) {
-    MemoryAccess.setLongAtOffset(seg, offsetBytes, value);
-  }
-
-  final void putNativeOrderedShort(final short value) {
-    final long pos = getPosition();
-    MemoryAccess.setShortAtOffset(seg, pos, value);
-    setPosition(pos + Short.BYTES);
-  }
-
-  final void putNativeOrderedShort(final long offsetBytes, final short value) {
-    MemoryAccess.setShortAtOffset(seg, offsetBytes, value);
   }
 
   //OTHER

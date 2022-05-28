@@ -110,8 +110,7 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   }
 
   @Override
-  public void getFloatArray(final float[] dstArray, final int dstOffsetFloats,
-      final int lengthFloats) {
+  public void getFloatArray(final float[] dstArray, final int dstOffsetFloats, final int lengthFloats) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthFloats) << FLOAT_SHIFT;
     MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
@@ -177,8 +176,7 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   }
 
   @Override
-  public void getShortArray(final short[] dstArray, final int dstOffsetShorts,
-      final int lengthShorts) {
+  public void getShortArray(final short[] dstArray, final int dstOffsetShorts, final int lengthShorts) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthShorts) << SHORT_SHIFT;
     MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
@@ -245,8 +243,7 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   }
 
   @Override
-  public void putFloatArray(final float[] srcArray, final int srcOffsetFloats,
-      final int lengthFloats) {
+  public void putFloatArray(final float[] srcArray, final int srcOffsetFloats, final int lengthFloats) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthFloats) << FLOAT_SHIFT;
     MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetFloats << FLOAT_SHIFT, copyBytes);

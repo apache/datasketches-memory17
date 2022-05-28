@@ -30,6 +30,7 @@ import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
 import org.apache.datasketches.memory.internal.Util;
 
 import jdk.incubator.foreign.MemorySegment;
+import jdk.incubator.foreign.ResourceScope;
 
 /**
  * Defines the read-only API for offset access to a resource.
@@ -41,8 +42,10 @@ public interface Memory extends BaseState {
   //BYTE BUFFER
   /**
    * Provides a view of the given <i>ByteBuffer</i> for read-only operations.
-   * The returned <i>Memory</i> will use the native <i>ByteOrder</i>,
-   * ignoring the byte order of the given <i>ByteBuffer</i>.
+   * The view is of the entire ByteBuffer independent of position and limit.
+   * The returned <i>WritableMemory</i> will use the native <i>ByteOrder</i>,
+   * independent of the ByteOrder of the given ByteBuffer.
+   * This does not affect the ByteOrder of data already in the ByteBuffer.
    * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null.
    * @return a new <i>Memory</i> for read-only operations on the given <i>ByteBuffer</i>.
    */
@@ -52,10 +55,10 @@ public interface Memory extends BaseState {
 
   /**
    * Provides a view of the given <i>ByteBuffer</i> for read-only operations.
-   * The returned <i>Memory</i> will use the given byte order,
-   * ignoring the byte order of the given <i>ByteBuffer</i>.
-   * This does not change the byte order of data already in the <i>ByteBuffer</i>.
-   * The view starts at zero (inclusive) and ends at the ByteBuffer's capacity (exclusive).
+   * The view is of the entire ByteBuffer independent of position and limit.
+   * The returned <i>WritableMemory</i> will use the native <i>ByteOrder</i>,
+   * independent of the ByteOrder of the given ByteBuffer.
+   * This does not affect the ByteOrder of data already in the ByteBuffer.
    * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return a new <i>Memory</i> for read-only operations on the given <i>ByteBuffer</i>.
@@ -63,41 +66,48 @@ public interface Memory extends BaseState {
   static Memory wrap(ByteBuffer byteBuffer, ByteOrder byteOrder) {
     Objects.requireNonNull(byteBuffer, "byteBuffer must not be null");
     Objects.requireNonNull(byteOrder, "byteOrder must not be null");
-    ByteBuffer byteBuf = byteBuffer.position(0).limit(byteBuffer.capacity()).asReadOnlyBuffer();
-    return BaseWritableMemoryImpl.wrapByteBuffer(byteBuf, true, byteOrder);
+    return BaseWritableMemoryImpl.wrapByteBuffer(byteBuffer, true, byteOrder);
   }
+
+  //Duplicates make no sense here
 
   //MAP
   /**
    * Maps the given file into <i>Memory</i> for read operations
    * Calling this method is equivalent to calling
-   * {@link #map(File, long, long, ByteOrder) map(file, 0, file.length(), ByteOrder.nativeOrder())}.
-   * @param file the given file to map. It must be non-null, length &ge; 0, and readable.
+   * {@link #map(File, long, long, ResourceScope, ByteOrder) map(file, 0, file.length(), scope, ByteOrder.nativeOrder())}.
+   * @param file the given file to map. It must be non-null with a non-negative length and readable.
+   * @param scope the given ResourceScope. It must be non-null.
    * @return mapped Memory.
    * @throws Exception
    */
-  static Memory map(File file) throws Exception {
-    return map(file, 0, file.length(), ByteOrder.nativeOrder());
+  static Memory map(File file, ResourceScope scope) throws Exception {
+    return map(file, 0, file.length(), scope, ByteOrder.nativeOrder());
   }
 
   /**
    * Maps the specified portion of the given file into <i>Memory</i> for read operations.
    * @param file the given file to map. It must be non-null,readable and length &ge; 0.
    * @param fileOffsetBytes the position in the given file in bytes. It must not be negative.
-   * @param capacityBytes the size of the mapped memory. It must be &ge; 0.
+   * @param capacityBytes the size of the mapped memory. It must not be negative..
+   * @param scope the given ResourceScope. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
-   * @return Memory
+   * @return mapped Memory
    * @throws Exception
    */
-  static Memory map(File file, long fileOffsetBytes, long capacityBytes, ByteOrder byteOrder)
+  @SuppressWarnings("resource")
+  static Memory map(File file, long fileOffsetBytes, long capacityBytes, ResourceScope scope, ByteOrder byteOrder)
       throws Exception {
-    Objects.requireNonNull(file, "file must be non-null.");
-    Objects.requireNonNull(byteOrder, "byteOrder must be non-null.");
+    Objects.requireNonNull(file, "File must be non-null.");
+    Objects.requireNonNull(byteOrder, "ByteOrder must be non-null.");
+    Objects.requireNonNull(scope, "ResourceScope must be non-null.");
     Util.negativeCheck(fileOffsetBytes, "fileOffsetBytes");
     Util.negativeCheck(capacityBytes, "capacityBytes");
-    if (!file.canRead()) { throw new IllegalArgumentException("file must be readable."); }
-    return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, true, byteOrder);
+    if (!file.canRead()) { throw new IllegalArgumentException("File must be readable."); }
+    return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, scope, true, byteOrder);
   }
+
+  //NO ALLOCATE DIRECT, makes no sense
 
   //REGIONS
   /**
@@ -163,6 +173,8 @@ public interface Memory extends BaseState {
    */
   Buffer asBuffer(ByteOrder byteOrder);
 
+  //NO ALLOCATE HEAP BYTE ARRAYS, makes no sense
+
   //WRAP - ACCESS PRIMITIVE HEAP ARRAYS for readOnly
   /**
    * Wraps the given primitive array for read operations assuming native byte order.
@@ -195,8 +207,7 @@ public interface Memory extends BaseState {
   static Memory wrap(byte[] array, int offsetBytes, int lengthBytes, ByteOrder byteOrder) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asSlice(offsetBytes, lengthBytes).asReadOnly();
-    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
-
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -207,7 +218,7 @@ public interface Memory extends BaseState {
   static Memory wrap(char[] array) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
-    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -218,7 +229,7 @@ public interface Memory extends BaseState {
   static Memory wrap(short[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
-    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -229,7 +240,7 @@ public interface Memory extends BaseState {
   static Memory wrap(int[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
-    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -240,7 +251,7 @@ public interface Memory extends BaseState {
   static Memory wrap(long[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
-    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -251,7 +262,7 @@ public interface Memory extends BaseState {
   static Memory wrap(float[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
-    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -262,8 +273,9 @@ public interface Memory extends BaseState {
   static Memory wrap(double[] array) {
     Objects.requireNonNull(array, "arr must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asReadOnly();
-    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, ByteOrder.nativeOrder(), null);
   }
+  //END OF CONSTRUCTOR-TYPE METHODS
 
   //PRIMITIVE getX() and getXArray()
 
@@ -380,6 +392,7 @@ public interface Memory extends BaseState {
   void getShortArray(long offsetBytes, short[] dstArray, int dstOffsetShorts, int lengthShorts);
 
   //SPECIAL PRIMITIVE READ METHODS: compareTo, copyTo, writeTo
+
   /**
    * Compares the bytes of this Memory to <i>that</i> Memory.
    * Returns <i>(this &lt; that) ? (some negative value) : (this &gt; that) ? (some positive value)

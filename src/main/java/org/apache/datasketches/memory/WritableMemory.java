@@ -25,6 +25,7 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
+import org.apache.datasketches.memory.internal.Util;
 
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -39,8 +40,10 @@ public interface WritableMemory extends Memory {
   //BYTE BUFFER
   /**
    * Provides a view of the given <i>ByteBuffer</i> for write operations.
+   * The view is of the entire ByteBuffer independent of position and limit.
    * The returned <i>WritableMemory</i> will use the native <i>ByteOrder</i>,
-   * ignoring the byte order of the given <i>ByteBuffer</i>.
+   * independent of the ByteOrder of the given ByteBuffer.
+   * This does not affect the ByteOrder of data already in the ByteBuffer.
    * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null and writable.
    * @return a new <i>WritableMemory</i> for write operations on the given <i>ByteBuffer</i>.
    */
@@ -50,10 +53,10 @@ public interface WritableMemory extends Memory {
 
   /**
    * Provides a view of the given <i>ByteBuffer</i> for write operations.
-   * The returned <i>WritableMemory</i> will use the given byte order,
-   * ignoring the byte order of the given <i>ByteBuffer</i>.
-   * This does not change the byte order of data already in the <i>ByteBuffer</i>.
-   * The view starts at zero (inclusive) and ends at the ByteBuffer's capacity (exclusive).
+   * The view is of the entire ByteBuffer independent of position and limit.
+   * The returned <i>WritableMemory</i> will use the native <i>ByteOrder</i>,
+   * independent of the ByteOrder of the given ByteBuffer.
+   * This does not affect the ByteOrder of data already in the ByteBuffer.
    * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null and writable.
    * @param byteOrder the byte order to be used. It must be non-null.
    * @return a new <i>WritableMemory</i> for write operations on the given <i>ByteBuffer</i>.
@@ -66,40 +69,47 @@ public interface WritableMemory extends Memory {
     return BaseWritableMemoryImpl.wrapByteBuffer(byteBuf, false, byteOrder);
   }
 
+  //Duplicates make no sense here
+
   //MAP
   /**
    * Maps the entire given file into native-ordered WritableMemory for write operations
    * Calling this method is equivalent to calling
-   * {@link #writableMap(File, long, long, ByteOrder) writableMap(file, 0, file.length(), ByteOrder.nativeOrder())}.
-   * @param file the given file to map. It must be non-null and writable.
+   * {@link #writableMap(File, long, long, ResourceScope, ByteOrder)
+   *   writableMap(file, 0, file.length(), scope, ByteOrder.nativeOrder())}.
+   * @param file the given file to map. It must be non-null with a non-negative length and writable.
+   * @param scope the give Resource Scope. It must be non-null.
    * @return mapped WritableMemory
    * @throws Exception
    */
-  static WritableMemory writableMap(File file) throws Exception {
-    return writableMap(file, 0, file.length(), ByteOrder.nativeOrder());
+  static WritableMemory writableMap(File file, ResourceScope scope) throws Exception {
+    return writableMap(file, 0, file.length(), scope, ByteOrder.nativeOrder());
   }
 
   /**
    * Maps the specified portion of the given file into Memory for write operations.
-   *
-   * <p><b>Note:</b> Always qualify this method with the class name, e.g.,
-   * <i>WritableMemory.map(...)</i>.
-   * @param file the given file to map. It must be non-null and writable.
+   * @param file the given file to map. It must be non-null with a non-negative length and writable.
    * @param fileOffsetBytes the position in the given file in bytes. It must not be negative.
    * @param capacityBytes the size of the mapped Memory. It must be &ge; 0.
+   * @param scope the give Resource Scope. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return mapped WritableMemory.
    * @throws Exception
    */
-  static WritableMemory writableMap(File file, long fileOffsetBytes, long capacityBytes, ByteOrder byteOrder)
-      throws Exception {
+  @SuppressWarnings("resource")
+  static WritableMemory writableMap(File file, long fileOffsetBytes, long capacityBytes, ResourceScope scope,
+      ByteOrder byteOrder) throws Exception {
     Objects.requireNonNull(file, "File must be non-null.");
     Objects.requireNonNull(byteOrder, "ByteOrder must be non-null.");
+    Objects.requireNonNull(scope, "ResourceScope must be non-null.");
+    Util.negativeCheck(fileOffsetBytes, "fileOffsetBytes");
+    Util.negativeCheck(capacityBytes, "capacityBytes");
     if (!file.canWrite()) { throw new ReadOnlyException("file must be writable."); }
-    return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, false, byteOrder);
+    return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, scope, false, byteOrder);
   }
 
   //ALLOCATE DIRECT
+
   /**
    * Allocates and provides access to capacityBytes directly in native (off-heap) memory.
    * Native byte order is assumed.
@@ -108,12 +118,13 @@ public interface WritableMemory extends Memory {
    * <p><b>NOTICE:</b> It is the responsibility of the using application to call <i>close()</i> when done.</p>
    *
    * @param capacityBytes the size of the desired memory in bytes.
+   * @param scope the given ResourceScope. It must be non-null.
    * @param memReqSvr A user-specified MemoryRequestServer, which may be null.
    * @return WritableMemory for this off-heap, native resource.
    */
   @SuppressWarnings("resource")
-  static WritableMemory allocateDirect(long capacityBytes, MemoryRequestServer memReqSvr) {
-    return allocateDirect(capacityBytes, 8, ResourceScope.newConfinedScope(), ByteOrder.nativeOrder(), memReqSvr);
+  static WritableMemory allocateDirect(long capacityBytes, ResourceScope scope, MemoryRequestServer memReqSvr) {
+    return allocateDirect(capacityBytes, 8, scope, ByteOrder.nativeOrder(), memReqSvr);
   }
 
   /**
@@ -125,8 +136,7 @@ public interface WritableMemory extends Memory {
    *
    * @param capacityBytes the size of the desired memory in bytes.
    * @param alignmentBytes requested segment alignment. Typically 1, 2, 4 or 8.
-   * @param scope ResourceScope for the backing MemorySegment.
-   * Typically <i>ResourceScope.newConfinedScope()</i>.
+   * @param scope the given ResourceScope. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @param memReqSvr A user-specified MemoryRequestServer, which may be null.
    * This is a callback mechanism for a user client of direct memory to request more memory.
@@ -212,8 +222,8 @@ public interface WritableMemory extends Memory {
    */
   WritableBuffer asWritableBuffer(ByteOrder byteOrder);
 
+  //ALLOCATE HEAP BYTE ARRAYS
 
-  //ALLOCATE HEAP VIA AUTOMATIC BYTE ARRAY
   /**
    * Creates on-heap WritableMemory with the given capacity and the native byte order.
    * This will utilize the MemoryRequestServer if it has been configured.
@@ -247,8 +257,7 @@ public interface WritableMemory extends Memory {
     return writableWrap(arr, 0, capacityBytes, byteOrder, memReqSvr);
   }
 
-
-  //ACCESS PRIMITIVE HEAP ARRAYS for WRITE
+  //WRITABLE WRAP - ACCESS PRIMITIVE HEAP ARRAYS for WRITE
 
   /**
    * Wraps the given primitive array for write operations assuming native byte order.
@@ -307,8 +316,7 @@ public interface WritableMemory extends Memory {
     Objects.requireNonNull(array, "array must be non-null");
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asSlice(offsetBytes, lengthBytes);
-    return BaseWritableMemoryImpl.wrapSegment(slice, ByteOrder.nativeOrder(), memReqSvr);
-
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, byteOrder, memReqSvr);
   }
 
   /**
@@ -319,7 +327,7 @@ public interface WritableMemory extends Memory {
   static WritableMemory writableWrap(char[] array) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
-    return BaseWritableMemoryImpl.wrapSegment(seg, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -330,7 +338,7 @@ public interface WritableMemory extends Memory {
   static WritableMemory writableWrap(short[] array) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
-    return BaseWritableMemoryImpl.wrapSegment(seg, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -341,7 +349,7 @@ public interface WritableMemory extends Memory {
   static WritableMemory writableWrap(int[] array) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
-    return BaseWritableMemoryImpl.wrapSegment(seg, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -352,7 +360,7 @@ public interface WritableMemory extends Memory {
   static WritableMemory writableWrap(long[] array) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
-    return BaseWritableMemoryImpl.wrapSegment(seg, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -363,7 +371,7 @@ public interface WritableMemory extends Memory {
   static WritableMemory writableWrap(float[] array) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
-    return BaseWritableMemoryImpl.wrapSegment(seg, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
 
   /**
@@ -374,7 +382,7 @@ public interface WritableMemory extends Memory {
   static WritableMemory writableWrap(double[] array) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
-    return BaseWritableMemoryImpl.wrapSegment(seg, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
   //END OF CONSTRUCTOR-TYPE METHODS
 

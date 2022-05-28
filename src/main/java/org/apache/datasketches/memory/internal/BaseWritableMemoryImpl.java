@@ -66,9 +66,9 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     super(seg, typeId);
   }
 
-  //HEAP
+  //HEAP ARRAYS
 
-  public static WritableMemory wrapSegment(
+  public static WritableMemory wrapSegmentAsArray(
       final MemorySegment seg,
       final ByteOrder byteOrder,
       final MemoryRequestServer memReqSvr) {
@@ -88,8 +88,9 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final ByteBuffer byteBuffer,
       final boolean localReadOnly,
       final ByteOrder byteOrder) {
-    byteBuffer.position(0).limit(byteBuffer.capacity());
-    MemorySegment seg = MemorySegment.ofByteBuffer(byteBuffer); //from 0 to capacity
+    final ByteBuffer byteBuf = localReadOnly ? byteBuffer.asReadOnlyBuffer() : byteBuffer.duplicate();
+    byteBuf.clear(); //resets position to zero and limit to capacity. Does not clear data.
+    MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
     int type = MEMORY | BYTEBUF
         | (localReadOnly ? READONLY : 0)
         | (seg.isMapped() ? MAP : 0)
@@ -105,24 +106,34 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   //MAP
 
   /**
-   * The static constructor that chooses the correct Map leaf node based on the byte order.
+   * Maps the specified portion of the given file into Memory for write operations.
+   * This chooses the correct Map leaf node based on the byte order.
    * @param file the file being wrapped. It must be non-null with length &gt; 0.
-   * @param fileOffsetBytes the file offset bytes
-   * @param capacityBytes the requested capacity of the memory mapped region. It must be &gt; 0
+   * @param fileOffsetBytes the position in the given file in bytes. It must not be negative.
+   * @param capacityBytes the size of the mapped Memory. It must be &ge; 0.
+   * @param scope the given ResourceScope. It must be non-null.
    * @param localReadOnly the requested read-only state
-   * @param byteOrder the requested byte-order
-   * @return this class constructed via the leaf node.
+   * @param byteOrder the byte order to be used.  It must be non-null.
+   * @return mapped WritableMemory.
    * @throws Exception
    */
   @SuppressWarnings("resource")
-  public static WritableMemory wrapMap(final File file, final long fileOffsetBytes,
-      final long capacityBytes, final boolean localReadOnly, final ByteOrder byteOrder)
-      throws Exception {
+  public static WritableMemory wrapMap(
+      final File file,
+      final long fileOffsetBytes,
+      final long capacityBytes,
+      final ResourceScope scope,
+      final boolean localReadOnly,
+      final ByteOrder byteOrder) throws Exception {
     FileChannel.MapMode mapMode = (localReadOnly) ? READ_ONLY : READ_WRITE;
     MemorySegment seg;
     try {
-      seg = MemorySegment.mapFile(file.toPath(), fileOffsetBytes, capacityBytes, mapMode,
-            ResourceScope.newConfinedScope()); }
+      seg = MemorySegment.mapFile(
+          file.toPath(),
+          fileOffsetBytes,
+          capacityBytes,
+          mapMode,
+          scope); }
     catch (final IllegalArgumentException | IllegalStateException | UnsupportedOperationException
         | IOException | SecurityException e) { throw e; }
     final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
@@ -186,9 +197,12 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final long capacityBytes,
       final boolean localReadOnly,
       final ByteOrder byteOrder) {
+    if (!this.isAlive()) { throw new IllegalStateException("This Memory is not alive."); }
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null.");
-    final boolean readOnly = isReadOnly() || localReadOnly || seg.isReadOnly();
-    final MemorySegment slice = seg.asSlice(offsetBytes, capacityBytes);
+    final boolean readOnly = isReadOnly() || localReadOnly;
+    final MemorySegment slice = (readOnly && !seg.isReadOnly())
+        ? seg.asSlice(offsetBytes, capacityBytes).asReadOnly()
+        : seg.asSlice(offsetBytes, capacityBytes);
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
@@ -222,7 +236,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
 
   @Override
   public Buffer asBuffer(final ByteOrder byteOrder) {
-    return asWritableBuffer(true, byteOrder);
+    return asWritableBufferImpl(true, byteOrder);
   }
 
   @Override
@@ -231,12 +245,14 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       throw new ReadOnlyException(
           "Cannot create a writable buffer from a read-only Memory.");
     }
-    return asWritableBuffer(false, byteOrder);
+    return asWritableBufferImpl(false, byteOrder);
   }
 
-  private WritableBuffer asWritableBuffer(final boolean localReadOnly, final ByteOrder byteOrder) {
+  private WritableBuffer asWritableBufferImpl(final boolean localReadOnly, final ByteOrder byteOrder) {
+    if (!this.isAlive()) { throw new IllegalStateException("This Memory is not alive."); }
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
     final boolean readOnly = isReadOnly() || localReadOnly;
+    final MemorySegment seg2 = (readOnly && !seg.isReadOnly()) ? seg.asReadOnly() : seg;
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
@@ -252,30 +268,30 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     WritableBuffer wbuf;
     if (byteBufferType) {
       if (nativeBOType) {
-        wbuf = new BBWritableBufferImpl(seg, type);
+        wbuf = new BBWritableBufferImpl(seg2, type);
       } else {
-        wbuf = new BBNonNativeWritableBufferImpl(seg, type);
+        wbuf = new BBNonNativeWritableBufferImpl(seg2, type);
       }
     }
     if (mapType) {
       if (nativeBOType) {
-        wbuf = new MapWritableBufferImpl(seg, type);
+        wbuf = new MapWritableBufferImpl(seg2, type);
       } else {
-        wbuf = new MapNonNativeWritableBufferImpl(seg, type);
+        wbuf = new MapNonNativeWritableBufferImpl(seg2, type);
       }
     }
     if (directType) {
       if (nativeBOType) {
-        wbuf = new DirectWritableBufferImpl(seg, type, memReqSvr);
+        wbuf = new DirectWritableBufferImpl(seg2, type, memReqSvr);
       } else {
-        wbuf = new DirectNonNativeWritableBufferImpl(seg, type, memReqSvr);
+        wbuf = new DirectNonNativeWritableBufferImpl(seg2, type, memReqSvr);
       }
     }
     //else heap type
     if (nativeBOType) {
-      wbuf = new HeapWritableBufferImpl(seg, type, memReqSvr);
+      wbuf = new HeapWritableBufferImpl(seg2, type, memReqSvr);
     } else {
-      wbuf = new HeapNonNativeWritableBufferImpl(seg, type, memReqSvr);
+      wbuf = new HeapNonNativeWritableBufferImpl(seg2, type, memReqSvr);
     }
     wbuf.setStartPositionEnd(0, 0, getCapacity());
     return wbuf;
@@ -297,8 +313,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     dstSlice.copyFrom(srcSlice);
   }
 
+  //OTHER PRIMITIVE READ METHODS: compareTo, copyTo, writeTo
 
-  //OTHER PRIMITIVE READ METHODS: compareTo, copyTo, equals
   @Override
   public final int compareTo(final long thisOffsetBytes, final long thisLengthBytes,
       final Memory that, final long thatOffsetBytes, final long thatLengthBytes) {
