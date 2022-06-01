@@ -22,12 +22,12 @@ package org.apache.datasketches.memory.internal;
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.Buffer;
@@ -66,7 +66,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     super(seg, typeId);
   }
 
-  //HEAP ARRAYS
+  //HEAP ARRAY RESOURCE
 
   public static WritableMemory wrapSegmentAsArray(
       final MemorySegment seg,
@@ -82,7 +82,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     return new HeapNonNativeWritableMemoryImpl(seg, type, memReqSvr);
   }
 
-  //BYTE BUFFER
+  //BYTE BUFFER RESOURCE
 
   public static WritableMemory wrapByteBuffer(
       final ByteBuffer byteBuffer,
@@ -93,8 +93,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
     int type = MEMORY | BYTEBUF
         | (localReadOnly ? READONLY : 0)
-        | (seg.isMapped() ? MAP : 0)
-        | (seg.isNative() ? DIRECT : 0);
+        | (seg.isNative() ? DIRECT : 0)
+        | (seg.isMapped() ? MAP : 0);
     if (byteOrder == ByteOrder.nativeOrder()) {
       type |= NATIVE;
       return new BBWritableMemoryImpl(seg, type);
@@ -103,7 +103,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     return new BBNonNativeWritableMemoryImpl(seg, type);
   }
 
-  //MAP
+  //MAP RESOURCE
 
   /**
    * Maps the specified portion of the given file into Memory for write operations.
@@ -145,7 +145,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         : new MapNonNativeWritableMemoryImpl(seg, type);
   }
 
-  //DIRECT
+  //DIRECT RESOURCE
 
   /**
    * The static constructor that chooses the correct Direct leaf node based on the byte order.
@@ -177,7 +177,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         : new DirectNonNativeWritableMemoryImpl(seg, type, memReqSvr);
   }
 
-  //REGIONS
+  //REGION DERIVED
 
   @Override
   public Memory region(final long offsetBytes, final long capacityBytes, final ByteOrder byteOrder) {
@@ -232,7 +232,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     return new HeapNonNativeWritableMemoryImpl(slice, type, memReqSvr);
   }
 
-  //AS BUFFER
+  //AS BUFFER DERIVED
 
   @Override
   public Buffer asBuffer(final ByteOrder byteOrder) {
@@ -253,6 +253,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
     final boolean readOnly = isReadOnly() || localReadOnly;
     final MemorySegment seg2 = (readOnly && !seg.isReadOnly()) ? seg.asReadOnly() : seg;
+    final boolean regionType = isRegionType();
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
@@ -260,39 +261,28 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     final boolean byteBufferType = isByteBufferType();
     final int type = BUFFER
         | (readOnly ? READONLY : 0)
+        | (regionType ? REGION : 0)
         | (duplicateType ? DUPLICATE : 0)
-        | (mapType ? MAP : 0)
         | (directType ? DIRECT : 0)
+        | (mapType ? MAP : 0)
         | (nativeBOType ? NATIVE : NONNATIVE)
         | (byteBufferType ? BYTEBUF : 0);
     WritableBuffer wbuf;
     if (byteBufferType) {
-      if (nativeBOType) {
-        wbuf = new BBWritableBufferImpl(seg2, type);
-      } else {
-        wbuf = new BBNonNativeWritableBufferImpl(seg2, type);
-      }
+      if (nativeBOType) { wbuf = new BBWritableBufferImpl(seg2, type); }
+      else { wbuf = new BBNonNativeWritableBufferImpl(seg2, type); }
     }
     if (mapType) {
-      if (nativeBOType) {
-        wbuf = new MapWritableBufferImpl(seg2, type);
-      } else {
-        wbuf = new MapNonNativeWritableBufferImpl(seg2, type);
-      }
+      if (nativeBOType) { wbuf = new MapWritableBufferImpl(seg2, type); }
+      else { wbuf = new MapNonNativeWritableBufferImpl(seg2, type); }
     }
     if (directType) {
-      if (nativeBOType) {
-        wbuf = new DirectWritableBufferImpl(seg2, type, memReqSvr);
-      } else {
-        wbuf = new DirectNonNativeWritableBufferImpl(seg2, type, memReqSvr);
-      }
+      if (nativeBOType) { wbuf = new DirectWritableBufferImpl(seg2, type, memReqSvr); }
+      else { wbuf = new DirectNonNativeWritableBufferImpl(seg2, type, memReqSvr); }
     }
     //else heap type
-    if (nativeBOType) {
-      wbuf = new HeapWritableBufferImpl(seg2, type, memReqSvr);
-    } else {
-      wbuf = new HeapNonNativeWritableBufferImpl(seg2, type, memReqSvr);
-    }
+    if (nativeBOType) { wbuf = new HeapWritableBufferImpl(seg2, type, memReqSvr); }
+    else { wbuf = new HeapNonNativeWritableBufferImpl(seg2, type, memReqSvr); }
     wbuf.setStartPositionEnd(0, 0, getCapacity());
     return wbuf;
   }
@@ -330,11 +320,12 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   }
 
   @Override
-  public final void writeTo(final long offsetBytes, final long lengthBytes,
-      final WritableByteChannel out) throws IOException {
+  public final void writeToByteStream(final long offsetBytes, final int lengthBytes,
+      final ByteArrayOutputStream out) throws IOException {
     checkBounds(offsetBytes, lengthBytes, seg.byteSize());
-    ByteBuffer bb = seg.asSlice(offsetBytes, lengthBytes).asByteBuffer();
-    out.write(bb);
+    final byte[] bArr = new byte[lengthBytes];
+    getByteArray(offsetBytes,bArr, 0, lengthBytes); //fundamental limitation of MemorySegment
+    out.writeBytes(bArr);
   }
 
 //  //PRIMITIVE putX() and putXArray() implementations

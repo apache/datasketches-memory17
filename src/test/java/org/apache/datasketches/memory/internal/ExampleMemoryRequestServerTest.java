@@ -17,10 +17,12 @@
  * under the License.
  */
 
-package org.apache.datasketches.memory;
+package org.apache.datasketches.memory.internal;
 
 import java.nio.ByteOrder;
 
+import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
 
 import jdk.incubator.foreign.ResourceScope;
@@ -131,6 +133,6 @@ public class ExampleMemoryRequestServerTest {
    * @param o value to print
    */
   static void println(Object o) {
-    System.out.println(o); //disable here
+    //System.out.println(o); //disable here
   }
 }

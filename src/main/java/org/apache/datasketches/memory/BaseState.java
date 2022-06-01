@@ -108,7 +108,7 @@ public interface BaseState /* extends AutoCloseable */ {
    * this object in the given range of bytes. This will also check two distinct ranges within the
    * same object for equals.
    * @param thisOffsetBytes the starting offset in bytes for this object.
-   * @param that the given object
+   * @param that the given BaseState object
    * @param thatOffsetBytes the starting offset in bytes for the given object
    * @param lengthBytes the size of the range in bytes
    * @return true if the given object has equal contents to this object in the given range of
@@ -118,20 +118,36 @@ public interface BaseState /* extends AutoCloseable */ {
       long thatOffsetBytes, long lengthBytes);
 
   /**
-   * Wraps the underlying MemorySegment in a ByteBuffer.
-   * @see MemorySegment#asByteBuffer
-   *
-   * @return a ByteBuffer view of this memory segment.
-   *
+   * Returns a ByteBuffer view of this Memory object with the given ByteOrder.
+   * Some of the properties of the returned buffer are linked to the properties of this Memory object.
+   * For instance, if this Memory object is immutable (i.e., read-only, see isReadOnly()),
+   * then the resulting buffer is read-only (see Buffer.isReadOnly().
+   * Additionally, if this is a native memory segment, the resulting buffer is direct
+   * (see ByteBuffer.isDirect()). The endianness of the returned buffer will be set to
+   * the given ByteOrder.
+   * @param order the given ByteOrder.
+   * @return a ByteBuffer view of this Memory object with the given ByteOrder.
+   * @throws UnsupportedOperationException - if this segment cannot be mapped onto a ByteBuffer instance,
+   * e.g. because it models an heap-based segment that is not based on a byte[]),
+   * or if its size is greater than Integer.MAX_VALUE.
    */
-  ByteBuffer asByteBuffer();
+  ByteBuffer asByteBufferView(ByteOrder order);
+
+  /**
+   * Returns a new ByteBuffer with a copy of the data from this Memory object.
+   * This new ByteBuffer will be writable, on heap, and with the endianness specified
+   * by the given ByteOrder.
+   * @param order the given ByteOrder.
+   * @return a new ByteBuffer with a copy of the data from this Memory object.
+   */
+  ByteBuffer toByteBuffer(ByteOrder order);
 
   /**
    * Returns a copy of the underlying MemorySegment.
    * The size is limited to <i>Integer.MAX_VALUE</i>.
    * @return a copy of the underlying MemorySegment
    */
-  MemorySegment asMemorySegment();
+  MemorySegment toMemorySegment();
 
   /**
    * Gets the capacity of this object in bytes

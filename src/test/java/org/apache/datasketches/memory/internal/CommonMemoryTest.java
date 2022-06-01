@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.datasketches.memory;
+package org.apache.datasketches.memory.internal;
 
 import static org.apache.datasketches.memory.internal.Util.isAllBitsClear;
 import static org.apache.datasketches.memory.internal.Util.isAllBitsSet;
@@ -27,6 +27,9 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+import org.apache.datasketches.memory.DefaultMemoryRequestServer;
+import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
 
 import jdk.incubator.foreign.ResourceScope;

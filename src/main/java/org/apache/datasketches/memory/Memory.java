@@ -19,11 +19,11 @@
 
 package org.apache.datasketches.memory;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.WritableByteChannel;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
@@ -122,7 +122,7 @@ public interface Memory extends BaseState {
    * offsetBytes and capacityBytes.
    */
   default Memory region(long offsetBytes, long capacityBytes) {
-    return region(offsetBytes, capacityBytes, ByteOrder.nativeOrder());
+    return region(offsetBytes, capacityBytes, getTypeByteOrder());
   }
 
   /**
@@ -154,7 +154,7 @@ public interface Memory extends BaseState {
    * @return a new <i>Buffer</i>
    */
   default Buffer asBuffer() {
-    return asBuffer(ByteOrder.nativeOrder());
+    return asBuffer(getTypeByteOrder());
   }
 
   /**
@@ -391,7 +391,7 @@ public interface Memory extends BaseState {
    */
   void getShortArray(long offsetBytes, short[] dstArray, int dstOffsetShorts, int lengthShorts);
 
-  //SPECIAL PRIMITIVE READ METHODS: compareTo, copyTo, writeTo
+  //SPECIAL READ METHODS: compareTo, copyTo, writeTo
 
   /**
    * Compares the bytes of this Memory to <i>that</i> Memory.
@@ -428,10 +428,11 @@ public interface Memory extends BaseState {
    * Writes bytes from a source range of this Memory to the given {@code WritableByteChannel}.
    * @param offsetBytes the source offset for this Memory
    * @param lengthBytes the number of bytes to copy
-   * @param out the destination WritableByteChannel
+   * @param out the destination ByteArrayOutputStream
    * @throws IOException may occur while writing to the WritableByteChannel
    */
-  void writeTo(long offsetBytes, long lengthBytes, WritableByteChannel out)
+  void writeToByteStream(long offsetBytes, int lengthBytes, ByteArrayOutputStream out)
       throws IOException;
+
 
 }

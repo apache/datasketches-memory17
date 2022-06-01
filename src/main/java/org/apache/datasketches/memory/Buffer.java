@@ -83,7 +83,10 @@ public interface Buffer extends BaseBuffer {
    * @return a read-only duplicate view of this Buffer with the same but independent values of
    * <i>start</i>, <i>position</i> and <i>end</i>.
    */
-  Buffer duplicate();
+  default Buffer duplicate() {
+    return duplicate(getTypeByteOrder());
+  }
+
 
   /**
    * Returns a read-only duplicate view of this Buffer with the same but independent values of

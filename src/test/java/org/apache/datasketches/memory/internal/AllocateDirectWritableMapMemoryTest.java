@@ -21,7 +21,7 @@
  * Note: Lincoln's Gettysburg Address is in the public domain. See LICENSE.
  */
 
-package org.apache.datasketches.memory;
+package org.apache.datasketches.memory.internal;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.datasketches.memory.internal.Util.getResourceFile;
@@ -36,6 +36,12 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteOrder;
 
+import org.apache.datasketches.memory.BaseState;
+import org.apache.datasketches.memory.DefaultMemoryRequestServer;
+import org.apache.datasketches.memory.Memory;
+import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.ReadOnlyException;
+import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -82,7 +88,7 @@ public class AllocateDirectWritableMapMemoryTest {
     assertTrue (file.isFile());
     file.deleteOnExit();  //comment out if you want to examine the file.
 
-    WritableMemory  dstMem = null;
+    WritableMemory dstMem = null;
     try (ResourceScope scope = ResourceScope.newConfinedScope()) { //this scope manages two Memory objects
       dstMem = WritableMemory.writableMap(file, 0, numBytes, scope, ByteOrder.nativeOrder());
 

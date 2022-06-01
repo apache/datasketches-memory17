@@ -23,6 +23,7 @@ import static jdk.incubator.foreign.MemoryAccess.getByteAtOffset;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.Objects;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.MemoryRequestServer;
@@ -181,12 +182,19 @@ public abstract class BaseStateImpl implements BaseState {
   }
 
   @Override
-  public ByteBuffer asByteBuffer() {
-    return seg.asByteBuffer();
+  public final ByteBuffer asByteBufferView(final ByteOrder order) {
+    final ByteBuffer byteBuf = seg.asByteBuffer().order(order);
+    return byteBuf;
   }
 
   @Override
-  public MemorySegment asMemorySegment() {
+  public ByteBuffer toByteBuffer(ByteOrder order) {
+    Objects.requireNonNull(order, "The input ByteOrder must not be null");
+    return ByteBuffer.wrap(seg.toByteArray());
+  }
+
+  @Override
+  public MemorySegment toMemorySegment() {
     MemorySegment arrSeg = MemorySegment.ofArray(new byte[(int)seg.byteSize()]);
     arrSeg.copyFrom(seg);
     return arrSeg;

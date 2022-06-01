@@ -17,10 +17,15 @@
  * under the License.
  */
 
-package org.apache.datasketches.memory;
+package org.apache.datasketches.memory.internal;
 
 import static org.testng.Assert.fail;
 
+import org.apache.datasketches.memory.Buffer;
+import org.apache.datasketches.memory.DefaultMemoryRequestServer;
+import org.apache.datasketches.memory.Memory;
+import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
 
 import jdk.incubator.foreign.ResourceScope;

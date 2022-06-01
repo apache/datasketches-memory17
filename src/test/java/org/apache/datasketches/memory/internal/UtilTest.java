@@ -21,7 +21,7 @@
  * Note: Lincoln's Gettysburg Address is in the public domain. See LICENSE.
  */
 
-package org.apache.datasketches.memory;
+package org.apache.datasketches.memory.internal;
 
 import static org.apache.datasketches.memory.internal.Util.characterPad;
 import static org.apache.datasketches.memory.internal.Util.getResourceBytes;
@@ -42,7 +42,7 @@ import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermissions;
 
-import org.apache.datasketches.memory.internal.Util;
+import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
 
 public class UtilTest {

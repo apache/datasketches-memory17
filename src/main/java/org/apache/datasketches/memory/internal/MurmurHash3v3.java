@@ -23,6 +23,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.util.Objects;
 
+import org.apache.datasketches.memory.Memory;
+
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
 
@@ -50,8 +52,6 @@ import jdk.incubator.foreign.MemorySegment;
 public final class MurmurHash3v3 {
   private static final long C1 = 0x87c37b91114253d5L;
   private static final long C2 = 0x4cf5ad432745937fL;
-
-
 
   /**
    * Returns a 128-bit hash of the input.
@@ -161,12 +161,12 @@ public final class MurmurHash3v3 {
     return hash(MemorySegment.ofArray(byteArr), 0L, byteArr.length, seed, hashOut);
   }
 
-  //The main API call
+  //The main API calls
 
   /**
    * Returns a 128-bit hash of the input as a long array of size 2.
    *
-   * @param seg The input on-heap Memory. Must be non-null and non-empty,
+   * @param mem The input Memory. Must be non-null and non-empty,
    * otherwise throws IllegalArgumentException.
    * @param offsetBytes the starting point within Memory.
    * @param lengthBytes the total number of bytes to be hashed.
@@ -174,12 +174,28 @@ public final class MurmurHash3v3 {
    * @param hashOut the size 2 long array for the resulting 128-bit hash
    * @return the hash.
    */
-  @SuppressWarnings("restriction")
+  public static long[] hash(final Memory mem, final long offsetBytes, final long lengthBytes,
+      final long seed, final long[] hashOut) {
+    Objects.requireNonNull(mem, "Input Memory is null");
+    MemorySegment seg = ((BaseStateImpl)mem).seg;
+    return hash(seg, offsetBytes, lengthBytes, seed, hashOut);
+  }
+
+  /**
+   * Returns a 128-bit hash of the input as a long array of size 2.
+   *
+   * @param seg The input MemorySegment. Must be non-null and non-empty,
+   * otherwise throws IllegalArgumentException.
+   * @param offsetBytes the starting point within Memory.
+   * @param lengthBytes the total number of bytes to be hashed.
+   * @param seed A long valued seed.
+   * @param hashOut the size 2 long array for the resulting 128-bit hash
+   * @return the hash.
+   */
   public static long[] hash(final MemorySegment seg, final long offsetBytes, final long lengthBytes,
       final long seed, final long[] hashOut) {
     Objects.requireNonNull(seg, "Input MemorySegment is null");
     if (seg.byteSize() == 0L) { throw new IllegalArgumentException("Input MemorySegment is empty."); }
-
 
     long cumOff = offsetBytes;
 

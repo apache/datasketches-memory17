@@ -60,7 +60,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     super(seg, typeId);
   }
 
-  //HEAP ARRAYS
+  //HEAP ARRAY RESOURCE
 
   public static WritableBuffer wrapSegmentAsArray(
       final MemorySegment seg,
@@ -76,8 +76,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     return new HeapNonNativeWritableBufferImpl(seg, type, memReqSvr);
   }
 
-
-  //BYTE BUFFER
+  //BYTE BUFFER RESOURCE
 
   public static WritableBuffer wrapByteBuffer(
       final ByteBuffer byteBuffer,
@@ -88,8 +87,8 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
     int type = BUFFER | BYTEBUF
         | (localReadOnly ? READONLY : 0)
-        | (seg.isMapped() ? MAP : 0)
-        | (seg.isNative() ? DIRECT : 0);
+        | (seg.isNative() ? DIRECT : 0)
+        | (seg.isMapped() ? MAP : 0);
     if (byteOrder == ByteOrder.nativeOrder()) {
       type |= NATIVE;
       final WritableBuffer wbuf = new BBWritableBufferImpl(seg, type);
@@ -102,10 +101,10 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     return wbuf;
   }
 
-  //NO MAP
-  //NO DIRECTS
+  //NO MAP RESOURCE
+  //NO DIRECT RESOURCE
 
-  //REGIONS
+  //REGIONS DERIVED
 
   @Override
   public Buffer region(final long offsetBytes, final long capacityBytes, final ByteOrder byteOrder) {
@@ -191,6 +190,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     if (!this.isAlive()) { throw new IllegalStateException("This Memory is not alive."); }
     final boolean readOnly = isReadOnly() || localReadOnly;
     final MemorySegment seg2 = (readOnly && !seg.isReadOnly()) ? seg.asReadOnly() : seg;
+    final boolean regionType = isRegionType();
     final boolean duplicateType = true;
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
@@ -198,6 +198,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     final boolean byteBufferType = isByteBufferType();
     final int type = BUFFER
         | (readOnly ? READONLY : 0)
+        | (regionType ? REGION : 0)
         | (duplicateType ? DUPLICATE : 0)
         | (mapType ? MAP : 0)
         | (directType ? DIRECT : 0)
@@ -206,37 +207,25 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
 
     WritableBuffer wbuf;
     if (byteBufferType) {
-      if (nativeBOType) {
-        wbuf = new BBWritableBufferImpl(seg2, type);
-      } else {
-        wbuf = new BBNonNativeWritableBufferImpl(seg2, type);
-      }
+      if (nativeBOType) { wbuf = new BBWritableBufferImpl(seg2, type); }
+      else { wbuf = new BBNonNativeWritableBufferImpl(seg2, type); }
     }
     if (mapType) {
-      if (nativeBOType) {
-        wbuf = new MapWritableBufferImpl(seg2, type);
-      } else {
-        wbuf = new MapNonNativeWritableBufferImpl(seg2, type);
-      }
+      if (nativeBOType) { wbuf = new MapWritableBufferImpl(seg2, type); }
+      else { wbuf = new MapNonNativeWritableBufferImpl(seg2, type); }
     }
     if (directType) {
-      if (nativeBOType) {
-        wbuf = new DirectWritableBufferImpl(seg2, type, memReqSvr);
-      } else {
-        wbuf = new DirectNonNativeWritableBufferImpl(seg2, type, memReqSvr);
-      }
+      if (nativeBOType) { wbuf = new DirectWritableBufferImpl(seg2, type, memReqSvr); }
+      else { wbuf = new DirectNonNativeWritableBufferImpl(seg2, type, memReqSvr); }
     }
     //else heap type
-    if (nativeBOType) {
-      wbuf = new HeapWritableBufferImpl(seg2, type, memReqSvr);
-    } else {
-      wbuf = new HeapNonNativeWritableBufferImpl(seg2, type, memReqSvr);
-    }
+    if (nativeBOType) { wbuf = new HeapWritableBufferImpl(seg2, type, memReqSvr); }
+    else { wbuf = new HeapNonNativeWritableBufferImpl(seg2, type, memReqSvr); }
     wbuf.setStartPositionEnd(getStart(), getPosition(), getEnd());
     return wbuf;
   }
 
-  //AS MEMORY
+  //AS MEMORY DERIVED
 
   @Override
   public Memory asMemory(final ByteOrder byteOrder) {
@@ -257,6 +246,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
     final boolean readOnly = isReadOnly() || localReadOnly;
     final MemorySegment seg2 = (readOnly && !seg.isReadOnly()) ? seg.asReadOnly() : seg;
+    final boolean regionType = isRegionType();
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
@@ -264,6 +254,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     final boolean byteBufferType = isByteBufferType();
     final int type = MEMORY
         | (readOnly ? READONLY : 0)
+        | (regionType ? REGION : 0)
         | (duplicateType ? DUPLICATE : 0)
         | (mapType ? MAP : 0)
         | (directType ? DIRECT : 0)
@@ -271,32 +262,20 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
         | (byteBufferType ? BYTEBUF : 0);
     WritableMemory wmem;
     if (byteBufferType) {
-      if (nativeBOType) {
-        wmem = new BBWritableMemoryImpl(seg2, type);
-      } else {
-        wmem = new BBNonNativeWritableMemoryImpl(seg2, type);
-      }
+      if (nativeBOType) { wmem = new BBWritableMemoryImpl(seg2, type); }
+      else { wmem = new BBNonNativeWritableMemoryImpl(seg2, type);}
     }
     if (mapType) {
-      if (nativeBOType) {
-        wmem = new MapWritableMemoryImpl(seg2, type);
-      } else {
-        wmem = new MapNonNativeWritableMemoryImpl(seg2, type);
-      }
+      if (nativeBOType) { wmem = new MapWritableMemoryImpl(seg2, type); }
+      else { wmem = new MapNonNativeWritableMemoryImpl(seg2, type); }
     }
     if (directType) {
-      if (nativeBOType) {
-        wmem = new DirectWritableMemoryImpl(seg2, type, memReqSvr);
-      } else {
-        wmem = new DirectNonNativeWritableMemoryImpl(seg2, type, memReqSvr);
-      }
+      if (nativeBOType) { wmem = new DirectWritableMemoryImpl(seg2, type, memReqSvr); }
+      else { wmem = new DirectNonNativeWritableMemoryImpl(seg2, type, memReqSvr); }
     }
     //else heap type
-    if (nativeBOType) {
-      wmem = new HeapWritableMemoryImpl(seg2, type, memReqSvr);
-    } else {
-      wmem = new HeapNonNativeWritableMemoryImpl(seg2, type, memReqSvr);
-    }
+    if (nativeBOType) { wmem = new HeapWritableMemoryImpl(seg2, type, memReqSvr); }
+    else { wmem = new HeapNonNativeWritableMemoryImpl(seg2, type, memReqSvr); }
     return wmem;
   }
 
@@ -325,7 +304,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     setPosition(pos + lengthBytes);
   }
 
-  //OTHER PRIMITIVE READ METHODS: copyTo, compareTo. No writeTo
+  //OTHER PRIMITIVE READ METHODS: e.g., copyTo, compareTo. No writeTo
 
   @Override
   public final int compareTo(final long thisOffsetBytes, final long thisLengthBytes,

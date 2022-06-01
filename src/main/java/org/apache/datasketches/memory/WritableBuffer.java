@@ -122,7 +122,7 @@ public interface WritableBuffer extends Buffer {
    * @return a new <i>WritableBuffer</i> representing the defined writable region.
    */
   default WritableBuffer writableRegion() {
-    return writableRegion(getPosition(), getEnd() - getPosition(), ByteOrder.nativeOrder());
+    return writableRegion(getPosition(), getEnd() - getPosition(), getTypeByteOrder());
   }
 
   /**
