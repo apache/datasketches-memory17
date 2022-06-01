@@ -52,8 +52,12 @@ public class SpecificLeafTest {
     Memory mem = Memory.wrap(bb).region(0, bytes, ByteOrder.nativeOrder());
     assertTrue(mem.hasByteBuffer());
     assertTrue(mem.isReadOnly());
+    assertTrue(((BaseStateImpl)mem).isMemoryType());
+    assertFalse(((BaseStateImpl)mem).isDirectType());
+    assertFalse(((BaseStateImpl)mem).isMapType());
     checkCrossLeafTypeIds(mem);
     Buffer buf = mem.asBuffer().region(0, bytes, ByteOrder.nativeOrder());
+    assertTrue(((BaseStateImpl)buf).isNativeType());
 
     bb.order(BaseState.NON_NATIVE_BYTE_ORDER);
     Memory mem2 = Memory.wrap(bb).region(0, bytes, BaseState.NON_NATIVE_BYTE_ORDER);
@@ -72,7 +76,9 @@ public class SpecificLeafTest {
     int bytes = 128;
     try (ResourceScope scope = ResourceScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(bytes, scope, memReqSvr);
+      assertFalse(((BaseStateImpl)wmem).isReadOnly());
       assertTrue(((BaseStateImpl)wmem).isDirectType());
+      assertFalse(((BaseStateImpl)wmem).isHeapType());
       assertFalse(wmem.isReadOnly());
       checkCrossLeafTypeIds(wmem);
       WritableMemory nnwmem = wmem.writableRegion(0, bytes, BaseState.NON_NATIVE_BYTE_ORDER);
@@ -87,6 +93,7 @@ public class SpecificLeafTest {
 
       assertTrue(((BaseStateImpl)mem).isRegionType());
       assertTrue(((BaseStateImpl)mem2).isRegionType());
+      assertTrue(((BaseStateImpl)mem2).isMemoryType());
       assertTrue(((BaseStateImpl)buf).isRegionType());
       assertTrue(((BaseStateImpl)buf2).isRegionType());
       assertTrue(((BaseStateImpl)buf3).isDuplicateType());
@@ -126,7 +133,9 @@ public class SpecificLeafTest {
 
       assertTrue(((BaseStateImpl)reg).isRegionType());
       assertTrue(((BaseStateImpl)reg2).isRegionType());
+      assertFalse(((BaseStateImpl)reg2).isNativeType());
       assertTrue(((BaseStateImpl)buf).isRegionType());
+      assertFalse(((BaseStateImpl)buf).isMemoryType());
       assertTrue(((BaseStateImpl)buf2).isRegionType());
       assertTrue(((BaseStateImpl)buf3).isDuplicateType());
       assertTrue(((BaseStateImpl)buf4).isDuplicateType());

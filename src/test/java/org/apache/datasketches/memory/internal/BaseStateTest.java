@@ -98,7 +98,12 @@ public class BaseStateTest {
     println(buf.toHexString("buffer", 0, 16, true));
   }
 
-
+  @Test
+  public void checkToMemorySegment() {
+    WritableMemory mem = WritableMemory.allocate(8);
+    mem.toMemorySegment();
+    mem.asByteBufferView(ByteOrder.nativeOrder());
+  }
 
   /********************/
   @Test

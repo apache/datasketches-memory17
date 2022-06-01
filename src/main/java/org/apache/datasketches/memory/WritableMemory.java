@@ -59,12 +59,13 @@ public interface WritableMemory extends Memory {
    * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null and writable.
    * @param byteOrder the byte order to be used. It must be non-null.
    * @return a new <i>WritableMemory</i> for write operations on the given <i>ByteBuffer</i>.
+   * @throws ReadOnlyException if ByteBuffer is not writable.
    */
   static WritableMemory writableWrap(ByteBuffer byteBuffer, ByteOrder byteOrder) {
     Objects.requireNonNull(byteBuffer, "ByteBuffer must not be null");
     Objects.requireNonNull(byteOrder, "ByteOrder must not be null");
     if (byteBuffer.isReadOnly()) { throw new ReadOnlyException("ByteBuffer must be writable."); }
-    ByteBuffer byteBuf = byteBuffer.position(0).limit(byteBuffer.capacity());
+    final ByteBuffer byteBuf = byteBuffer.position(0).limit(byteBuffer.capacity());
     return BaseWritableMemoryImpl.wrapByteBuffer(byteBuf, false, byteOrder);
   }
 
@@ -79,7 +80,7 @@ public interface WritableMemory extends Memory {
    * @param file the given file to map. It must be non-null with a non-negative length and writable.
    * @param scope the give Resource Scope. It must be non-null.
    * @return mapped WritableMemory
-   * @throws Exception
+   * @throws Exception various IO exceptions
    */
   static WritableMemory writableMap(File file, ResourceScope scope) throws Exception {
     return writableMap(file, 0, file.length(), scope, ByteOrder.nativeOrder());
@@ -93,7 +94,8 @@ public interface WritableMemory extends Memory {
    * @param scope the give Resource Scope. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return mapped WritableMemory.
-   * @throws Exception
+   * @throws Exception various IO exceptions
+   * @throws ReadOnlyException if file is not writable
    */
   @SuppressWarnings("resource")
   static WritableMemory writableMap(File file, long fileOffsetBytes, long capacityBytes, ResourceScope scope,

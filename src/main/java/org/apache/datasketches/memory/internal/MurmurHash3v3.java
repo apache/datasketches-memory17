@@ -60,6 +60,7 @@ public final class MurmurHash3v3 {
    * @param in long array
    * @param seed A long valued seed.
    * @return the hash
+   * @throws IllegalArgumentException if input is empty or null
    */
   public static long[] hash(final long[] in, final long seed) {
     if ((in == null) || (in.length == 0)) {
@@ -75,6 +76,7 @@ public final class MurmurHash3v3 {
    * @param in int array
    * @param seed A long valued seed.
    * @return the hash
+   * @throws IllegalArgumentException if input is empty or null
    */
   public static long[] hash(final int[] in, final long seed) {
     if ((in == null) || (in.length == 0)) {
@@ -90,6 +92,7 @@ public final class MurmurHash3v3 {
    * @param in char array
    * @param seed A long valued seed.
    * @return the hash
+   * @throws IllegalArgumentException if input is empty or null
    */
   public static long[] hash(final char[] in, final long seed) {
     if ((in == null) || (in.length == 0)) {
@@ -105,6 +108,7 @@ public final class MurmurHash3v3 {
    * @param in byte array
    * @param seed A long valued seed.
    * @return the hash
+   * @throws IllegalArgumentException if input is empty or null
    */
   public static long[] hash(final byte[] in, final long seed) {
     if ((in == null) || (in.length == 0)) {
@@ -152,6 +156,7 @@ public final class MurmurHash3v3 {
    * @param seed A long valued seed.
    * @param hashOut A long array of size 2
    * @return the hash
+   * @throws IllegalArgumentException if input is empty or null
    */
   public static long[] hash(final String in, final long seed, final long[] hashOut) {
     if ((in == null) || (in.length() == 0)) {
@@ -177,7 +182,7 @@ public final class MurmurHash3v3 {
   public static long[] hash(final Memory mem, final long offsetBytes, final long lengthBytes,
       final long seed, final long[] hashOut) {
     Objects.requireNonNull(mem, "Input Memory is null");
-    MemorySegment seg = ((BaseStateImpl)mem).seg;
+    final MemorySegment seg = ((BaseStateImpl)mem).seg;
     return hash(seg, offsetBytes, lengthBytes, seed, hashOut);
   }
 
@@ -191,6 +196,7 @@ public final class MurmurHash3v3 {
    * @param seed A long valued seed.
    * @param hashOut the size 2 long array for the resulting 128-bit hash
    * @return the hash.
+   * @throws IllegalArgumentException if input MemorySegment is empty
    */
   public static long[] hash(final MemorySegment seg, final long offsetBytes, final long lengthBytes,
       final long seed, final long[] hashOut) {

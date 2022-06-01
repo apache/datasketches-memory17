@@ -74,11 +74,12 @@ public interface Memory extends BaseState {
   /**
    * Maps the given file into <i>Memory</i> for read operations
    * Calling this method is equivalent to calling
-   * {@link #map(File, long, long, ResourceScope, ByteOrder) map(file, 0, file.length(), scope, ByteOrder.nativeOrder())}.
+   * {@link #map(File, long, long, ResourceScope, ByteOrder)
+   * map(file, 0, file.length(), scope, ByteOrder.nativeOrder())}.
    * @param file the given file to map. It must be non-null with a non-negative length and readable.
    * @param scope the given ResourceScope. It must be non-null.
    * @return mapped Memory.
-   * @throws Exception
+   * @throws Exception various IO exceptions
    */
   static Memory map(File file, ResourceScope scope) throws Exception {
     return map(file, 0, file.length(), scope, ByteOrder.nativeOrder());
@@ -92,7 +93,8 @@ public interface Memory extends BaseState {
    * @param scope the given ResourceScope. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return mapped Memory
-   * @throws Exception
+   * @throws Exception various IO exceptions
+   * @throws IllegalArgumentException if file is not readable
    */
   @SuppressWarnings("resource")
   static Memory map(File file, long fileOffsetBytes, long capacityBytes, ResourceScope scope, ByteOrder byteOrder)
@@ -194,7 +196,7 @@ public interface Memory extends BaseState {
   }
 
   /**
-   * Wraps the given primitive array for read operations assuming native byte order.
+   * Wraps the given primitive array for read operations with the given byte order.
    * @param array the given primitive array. It must be non-null.
    * @param offsetBytes the byte offset into the given array
    * @param lengthBytes the number of bytes to include from the given array.
@@ -204,7 +206,7 @@ public interface Memory extends BaseState {
   static Memory wrap(byte[] array, int offsetBytes, int lengthBytes, ByteOrder byteOrder) {
     Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asSlice(offsetBytes, lengthBytes).asReadOnly();
-    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, ByteOrder.nativeOrder(), null);
+    return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, byteOrder, null);
   }
 
   /**
@@ -430,6 +432,5 @@ public interface Memory extends BaseState {
    */
   void writeToByteStream(long offsetBytes, int lengthBytes, ByteArrayOutputStream out)
       throws IOException;
-
 
 }

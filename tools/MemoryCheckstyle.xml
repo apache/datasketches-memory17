@@ -41,6 +41,11 @@ under the License.
     <property name="fileNamePattern" value="src[\\/]test[\\/]java[\\/].+$|module\-info\.java.+$"/>
   </module>
 
+  <!-- Excludes all 'module-info.java' files -->
+  <module name="BeforeExecutionExclusionFileFilter">
+    <property name="fileNamePattern" value="module\-info\.java$"/>
+  </module>
+
   <module name="FileTabCharacter">
     <property name="eachLine" value="true"/>
   </module>
@@ -200,10 +205,11 @@ under the License.
     </module>
     
     <module name="JavadocMethod">
-      <property name="scope" value="public"/>
+      <property name="allowedAnnotations" value="Override, Test"/>
+      <property name="validateThrows" value="true"/>
+      <property name="accessModifiers" value="public"/>
       <property name="allowMissingParamTags" value="false"/> <!-- default -->
       <property name="allowMissingReturnTag" value="false"/> <!-- default -->
-      <property name="allowedAnnotations" value="Override, Test"/>
     </module>
     
     <module name="JavadocParagraph"/>

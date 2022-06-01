@@ -39,7 +39,7 @@ import jdk.incubator.foreign.MemorySegment;
  * <p>This implementation produces exactly the same hash result as the
  * MurmurHash3 function in datasketches-java given compatible inputs.</p>
  *
- * * <p>This version 3 of the implementation leverages the jdk.incubator.foreign package of JDK-17 in place of
+ * <p>This version 3 of the implementation leverages the jdk.incubator.foreign package of JDK-17 in place of
  * the Unsafe class.
  *
  * @author Lee Rhodes

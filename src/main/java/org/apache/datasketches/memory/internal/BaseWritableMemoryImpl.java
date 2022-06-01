@@ -66,7 +66,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     super(seg, typeId);
   }
 
-  //HEAP ARRAY RESOURCE
+  //WRAP HEAP ARRAY RESOURCE
 
   public static WritableMemory wrapSegmentAsArray(
       final MemorySegment seg,
@@ -90,7 +90,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final ByteOrder byteOrder) {
     final ByteBuffer byteBuf = localReadOnly ? byteBuffer.asReadOnlyBuffer() : byteBuffer.duplicate();
     byteBuf.clear(); //resets position to zero and limit to capacity. Does not clear data.
-    MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
+    final MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
     int type = MEMORY | BYTEBUF
         | (localReadOnly ? READONLY : 0)
         | (seg.isNative() ? DIRECT : 0)
@@ -115,7 +115,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
    * @param localReadOnly the requested read-only state
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return mapped WritableMemory.
-   * @throws Exception
+   * @throws Exception for various IO exceptions
    */
   @SuppressWarnings("resource")
   public static WritableMemory wrapMap(
@@ -125,8 +125,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final ResourceScope scope,
       final boolean localReadOnly,
       final ByteOrder byteOrder) throws Exception {
-    FileChannel.MapMode mapMode = (localReadOnly) ? READ_ONLY : READ_WRITE;
-    MemorySegment seg;
+    final FileChannel.MapMode mapMode = (localReadOnly) ? READ_ONLY : READ_WRITE;
+    final MemorySegment seg;
     try {
       seg = MemorySegment.mapFile(
           file.toPath(),
@@ -298,8 +298,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   public final void getByteArray(final long offsetBytes, final byte[] dstArray,
       final int dstOffsetBytes, final int lengthBytes) {
     checkBounds(dstOffsetBytes, lengthBytes, dstArray.length);
-    MemorySegment srcSlice = seg.asSlice(offsetBytes, lengthBytes);
-    MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetBytes, lengthBytes);
+    final MemorySegment srcSlice = seg.asSlice(offsetBytes, lengthBytes);
+    final MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetBytes, lengthBytes);
     dstSlice.copyFrom(srcSlice);
   }
 
@@ -328,7 +328,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     out.writeBytes(bArr);
   }
 
-//  //PRIMITIVE putX() and putXArray() implementations
+  //  //PRIMITIVE putX() and putXArray() implementations
 
   @Override
   public final void putByte(final long offsetBytes, final byte value) {
@@ -338,12 +338,12 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   @Override
   public final void putByteArray(final long offsetBytes, final byte[] srcArray,
       final int srcOffsetBytes, final int lengthBytes) {
-    MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetBytes, lengthBytes);
-    MemorySegment dstSlice = seg.asSlice(offsetBytes, lengthBytes);
+    final MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetBytes, lengthBytes);
+    final MemorySegment dstSlice = seg.asSlice(offsetBytes, lengthBytes);
     dstSlice.copyFrom(srcSlice);
   }
 
-//  //OTHER WRITE METHODS
+  // OTHER WRITE METHODS
 
   @Override
   public final void clear() {
@@ -352,7 +352,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
 
   @Override
   public final void clear(final long offsetBytes, final long lengthBytes) {
-    MemorySegment slice = seg.asSlice(offsetBytes, lengthBytes);
+    final MemorySegment slice = seg.asSlice(offsetBytes, lengthBytes);
     slice.fill((byte)0);
   }
 
@@ -368,8 +368,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   }
 
   @Override
-  public final void fill(long offsetBytes, long lengthBytes, final byte value) {
-    MemorySegment slice = seg.asSlice(offsetBytes, lengthBytes);
+  public final void fill(final long offsetBytes, final long lengthBytes, final byte value) {
+    final MemorySegment slice = seg.asSlice(offsetBytes, lengthBytes);
     slice.fill(value);
   }
 

@@ -69,8 +69,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void getCharArray(final char[] dstArray, final int dstOffsetChars, final int lengthChars) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthChars) << CHAR_SHIFT;
-    MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
-    MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetChars << CHAR_SHIFT, copyBytes);
+    final MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetChars << CHAR_SHIFT, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -91,8 +91,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void getDoubleArray(final double[] dstArray, final int dstOffsetDoubles, final int lengthDoubles) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthDoubles) << DOUBLE_SHIFT;
-    MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
-    MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetDoubles << DOUBLE_SHIFT, copyBytes);
+    final MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetDoubles << DOUBLE_SHIFT, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -113,8 +113,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void getFloatArray(final float[] dstArray, final int dstOffsetFloats, final int lengthFloats) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthFloats) << FLOAT_SHIFT;
-    MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
-    MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetFloats << FLOAT_SHIFT, copyBytes);
+    final MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetFloats << FLOAT_SHIFT, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -135,8 +135,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void getIntArray(final int[] dstArray, final int dstOffsetInts, final int lengthInts) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthInts) << INT_SHIFT;
-    MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
-    MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetInts << INT_SHIFT, copyBytes);
+    final MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetInts << INT_SHIFT, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -157,8 +157,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void getLongArray(final long[] dstArray, final int dstOffsetLongs, final int lengthLongs) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthLongs) << LONG_SHIFT;
-    MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
-    MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetLongs << LONG_SHIFT, copyBytes);
+    final MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetLongs << LONG_SHIFT, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -179,8 +179,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void getShortArray(final short[] dstArray, final int dstOffsetShorts, final int lengthShorts) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthShorts) << SHORT_SHIFT;
-    MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
-    MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetShorts << SHORT_SHIFT, copyBytes);
+    final MemorySegment srcSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetShorts << SHORT_SHIFT, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -202,8 +202,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void putCharArray(final char[] srcArray, final int srcOffsetChars, final int lengthChars) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthChars) << CHAR_SHIFT;
-    MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetChars << CHAR_SHIFT, copyBytes);
-    MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetChars << CHAR_SHIFT, copyBytes);
+    final MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -224,8 +224,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void putDoubleArray(final double[] srcArray, final int srcOffsetDoubles, final int lengthDoubles) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthDoubles) << DOUBLE_SHIFT;
-    MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetDoubles << DOUBLE_SHIFT, copyBytes);
-    MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetDoubles << DOUBLE_SHIFT, copyBytes);
+    final MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -246,8 +246,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void putFloatArray(final float[] srcArray, final int srcOffsetFloats, final int lengthFloats) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthFloats) << FLOAT_SHIFT;
-    MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetFloats << FLOAT_SHIFT, copyBytes);
-    MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetFloats << FLOAT_SHIFT, copyBytes);
+    final MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -268,8 +268,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void putIntArray(final int[] srcArray, final int srcOffsetInts, final int lengthInts) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthInts) << INT_SHIFT;
-    MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetInts << INT_SHIFT, copyBytes);
-    MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetInts << INT_SHIFT, copyBytes);
+    final MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -290,8 +290,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   public void putLongArray(final long[] srcArray, final int srcOffsetLongs, final int lengthLongs) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthLongs) << LONG_SHIFT;
-    MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetLongs << LONG_SHIFT, copyBytes);
-    MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetLongs << LONG_SHIFT, copyBytes);
+    final MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }
@@ -313,8 +313,8 @@ abstract class NativeWritableBufferImpl extends BaseWritableBufferImpl {
       final int lengthShorts) {
     final long pos = getPosition();
     final long copyBytes = ((long) lengthShorts) << SHORT_SHIFT;
-    MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetShorts << SHORT_SHIFT, copyBytes);
-    MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
+    final MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetShorts << SHORT_SHIFT, copyBytes);
+    final MemorySegment dstSlice = seg.asSlice(pos, copyBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + copyBytes);
   }

@@ -25,7 +25,6 @@ import java.util.Objects;
 
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
-import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.ReadOnlyException;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
@@ -60,21 +59,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     super(seg, typeId);
   }
 
-  //HEAP ARRAY RESOURCE
-
-  public static WritableBuffer wrapSegmentAsArray(
-      final MemorySegment seg,
-      final ByteOrder byteOrder,
-      final MemoryRequestServer memReqSvr) {
-    int type = BUFFER
-        | (seg.isReadOnly() ? READONLY : 0);
-    if (byteOrder == ByteOrder.nativeOrder()) {
-      type |= NATIVE;
-      return new HeapWritableBufferImpl(seg, type, memReqSvr);
-    }
-    type |= NONNATIVE;
-    return new HeapNonNativeWritableBufferImpl(seg, type, memReqSvr);
-  }
+  //NO WRAP HEAP ARRAY RESOURCE
 
   //BYTE BUFFER RESOURCE
 
@@ -84,7 +69,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
       final ByteOrder byteOrder) {
     final ByteBuffer byteBuf = localReadOnly ? byteBuffer.asReadOnlyBuffer() : byteBuffer.duplicate();
     byteBuf.clear(); //resets position to zero and limit to capacity. Does not clear data.
-    MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
+    final MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
     int type = BUFFER | BYTEBUF
         | (localReadOnly ? READONLY : 0)
         | (seg.isNative() ? DIRECT : 0)
@@ -263,7 +248,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     WritableMemory wmem;
     if (byteBufferType) {
       if (nativeBOType) { wmem = new BBWritableMemoryImpl(seg2, type); }
-      else { wmem = new BBNonNativeWritableMemoryImpl(seg2, type);}
+      else { wmem = new BBNonNativeWritableMemoryImpl(seg2, type); }
     }
     if (mapType) {
       if (nativeBOType) { wmem = new MapWritableMemoryImpl(seg2, type); }
@@ -297,9 +282,9 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   @Override
   public final void getByteArray(final byte[] dstArray, final int dstOffsetBytes,
       final int lengthBytes) {
-    MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetBytes, lengthBytes);
+    final MemorySegment dstSlice = MemorySegment.ofArray(dstArray).asSlice(dstOffsetBytes, lengthBytes);
     final long pos = getPosition();
-    MemorySegment srcSlice = seg.asSlice(pos, lengthBytes);
+    final MemorySegment srcSlice = seg.asSlice(pos, lengthBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + lengthBytes);
   }
@@ -335,9 +320,9 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   @Override
   public final void putByteArray(final byte[] srcArray, final int srcOffsetBytes,
       final int lengthBytes) {
-    MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetBytes, lengthBytes);
+    final MemorySegment srcSlice = MemorySegment.ofArray(srcArray).asSlice(srcOffsetBytes, lengthBytes);
     final long pos = getPosition();
-    MemorySegment dstSlice = seg.asSlice(pos, lengthBytes);
+    final MemorySegment dstSlice = seg.asSlice(pos, lengthBytes);
     dstSlice.copyFrom(srcSlice);
     setPosition(pos + lengthBytes);
   }

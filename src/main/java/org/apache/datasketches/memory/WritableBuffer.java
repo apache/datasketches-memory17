@@ -60,6 +60,7 @@ public interface WritableBuffer extends Buffer {
    * @param byteBuffer the given ByteBuffer. It must be non-null and writable.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return a new <i>WritableBuffer</i> for write operations on the given <i>ByteBuffer</i>.
+   * @throws ReadOnlyException if ByteBuffer is not writable
    */
   static WritableBuffer writableWrap(ByteBuffer byteBuffer, ByteOrder byteOrder) {
     Objects.requireNonNull(byteBuffer, "ByteBuffer must not be null");

@@ -110,27 +110,13 @@ public abstract class BaseStateImpl implements BaseState {
   public boolean isAlive() { return seg.scope().isAlive(); }
 
   /**
-   * Assert the requested offset and length against the allocated size.
-   * The invariants equation is: {@code 0 <= reqOff <= reqLen <= reqOff + reqLen <= allocSize}.
-   * If this equation is violated and assertions are enabled, an {@link AssertionError} will
-   * be thrown.
-   * @param reqOff the requested offset
-   * @param reqLen the requested length
-   * @param allocSize the allocated size.
-   */
-  public static void assertBounds(final long reqOff, final long reqLen, final long allocSize) {
-    assert ((reqOff | reqLen | (reqOff + reqLen) | (allocSize - (reqOff + reqLen))) >= 0) :
-      "reqOffset: " + reqOff + ", reqLength: " + reqLen
-      + ", (reqOff + reqLen): " + (reqOff + reqLen) + ", allocSize: " + allocSize;
-  }
-
-  /**
    * Check the requested offset and length against the allocated size.
    * The invariants equation is: {@code 0 <= reqOff <= reqLen <= reqOff + reqLen <= allocSize}.
    * If this equation is violated an {@link IllegalArgumentException} will be thrown.
    * @param reqOff the requested offset
    * @param reqLen the requested length
    * @param allocSize the allocated size.
+   * @throws IllegalArgumentException for exceeding address bounds
    */
   public static void checkBounds(final long reqOff, final long reqLen, final long allocSize) {
     if ((reqOff | reqLen | (reqOff + reqLen) | (allocSize - (reqOff + reqLen))) < 0) {
@@ -159,6 +145,7 @@ public abstract class BaseStateImpl implements BaseState {
    * Returns true if the given byteOrder is the same as the native byte order.
    * @param byteOrder the given byte order
    * @return true if the given byteOrder is the same as the native byte order.
+   * @throws IllegalArgumentException if ByteOrder is null
    */
   public static boolean isNativeByteOrder(final ByteOrder byteOrder) {
     if (byteOrder == null) {
@@ -188,14 +175,14 @@ public abstract class BaseStateImpl implements BaseState {
   }
 
   @Override
-  public ByteBuffer toByteBuffer(ByteOrder order) {
+  public ByteBuffer toByteBuffer(final ByteOrder order) {
     Objects.requireNonNull(order, "The input ByteOrder must not be null");
     return ByteBuffer.wrap(seg.toByteArray());
   }
 
   @Override
   public MemorySegment toMemorySegment() {
-    MemorySegment arrSeg = MemorySegment.ofArray(new byte[(int)seg.byteSize()]);
+    final MemorySegment arrSeg = MemorySegment.ofArray(new byte[(int)seg.byteSize()]);
     arrSeg.copyFrom(seg);
     return arrSeg;
   }
@@ -262,11 +249,11 @@ public abstract class BaseStateImpl implements BaseState {
     return ((getTypeId() & READONLY) > 0) || seg.isReadOnly();
   }
 
-  final static int setReadOnlyType(final int type, final boolean readOnly) {
-    return (type & ~READONLY) | (readOnly ? READONLY : 0);
-  }
+  //  final static int setReadOnlyType(final int type, final boolean readOnly) { //not used
+  //    return (type & ~READONLY) | (readOnly ? READONLY : 0);
+  //  }
 
-  final boolean isRegionType() { //
+  final boolean isRegionType() {
     return (getTypeId() & REGION) > 0;
   }
 
@@ -274,15 +261,15 @@ public abstract class BaseStateImpl implements BaseState {
     return (getTypeId() & DUPLICATE) > 0;
   }
 
-  final boolean isMemoryType() { //
+  final boolean isMemoryType() {
     return (getTypeId() & BUFFER) == 0;
   }
 
-  final boolean isBufferType() { //
+  final boolean isBufferType() {
     return (getTypeId() & BUFFER) > 0;
   }
 
-  final boolean isNativeType() { //
+  final boolean isNativeType() {
     return (getTypeId() & NONNATIVE) == 0;
   }
 
@@ -290,15 +277,15 @@ public abstract class BaseStateImpl implements BaseState {
     return (getTypeId() & NONNATIVE) > 0;
   }
 
-  final boolean isHeapType() { //
+  final boolean isHeapType() { //test only
     return (getTypeId() >>> 3 & 3) == 0;
   }
 
-  final boolean isDirectType() { //
+  final boolean isDirectType() { //test only
     return (getTypeId() & DIRECT) > 0;
   }
 
-  final boolean isMapType() { //
+  final boolean isMapType() { //test only
     return (getTypeId() & MAP) > 0;
   }
 
@@ -412,6 +399,7 @@ public abstract class BaseStateImpl implements BaseState {
    * Returns first two number groups of the java version string.
    * @param jdkVer the java version string from System.getProperty("java.version").
    * @return first two number groups of the java version string.
+   * @throws IllegalArgumentException for an improper Java version string.
    */
   public static int[] parseJavaVersion(final String jdkVer) {
     final int p0, p1;

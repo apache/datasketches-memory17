@@ -19,13 +19,16 @@
 
 package org.apache.datasketches.memory.internal;
 
+import static jdk.incubator.foreign.MemoryAccess.getByteAtOffset;
+import static jdk.incubator.foreign.MemoryAccess.getIntAtOffset;
+import static jdk.incubator.foreign.MemoryAccess.getLongAtOffset;
 import static org.apache.datasketches.memory.internal.BaseStateImpl.CHAR_SHIFT;
 import static org.apache.datasketches.memory.internal.BaseStateImpl.DOUBLE_SHIFT;
 import static org.apache.datasketches.memory.internal.BaseStateImpl.FLOAT_SHIFT;
 import static org.apache.datasketches.memory.internal.BaseStateImpl.INT_SHIFT;
 import static org.apache.datasketches.memory.internal.BaseStateImpl.LONG_SHIFT;
 import static org.apache.datasketches.memory.internal.BaseStateImpl.SHORT_SHIFT;
-import static jdk.incubator.foreign.MemoryAccess.*;
+
 import jdk.incubator.foreign.MemorySegment;
 
 /**
@@ -196,7 +199,7 @@ public class XxHash64 {
    */
   public static long hashBytes(final byte[] arr, final int offsetBytes,
       final int lengthBytes, final long seed) {
-    MemorySegment seg = MemorySegment.ofArray(arr);
+    final MemorySegment seg = MemorySegment.ofArray(arr);
     return hash(seg, offsetBytes, lengthBytes, seed);
   }
 
@@ -211,7 +214,7 @@ public class XxHash64 {
    */
   public static long hashShorts(final short[] arr, final int offsetShorts,
       final int lengthShorts, final long seed) {
-    MemorySegment seg = MemorySegment.ofArray(arr);
+    final MemorySegment seg = MemorySegment.ofArray(arr);
     return hash(seg, (offsetShorts << SHORT_SHIFT), lengthShorts << SHORT_SHIFT, seed);
   }
 
@@ -226,7 +229,7 @@ public class XxHash64 {
    */
   public static long hashChars(final char[] arr, final int offsetChars,
       final int lengthChars, final long seed) {
-    MemorySegment seg = MemorySegment.ofArray(arr);
+    final MemorySegment seg = MemorySegment.ofArray(arr);
     return hash(seg, offsetChars << CHAR_SHIFT, lengthChars << CHAR_SHIFT, seed);
   }
 
@@ -241,7 +244,7 @@ public class XxHash64 {
    */
   public static long hashInts(final int[] arr, final int offsetInts,
       final int lengthInts, final long seed) {
-    MemorySegment seg = MemorySegment.ofArray(arr);
+    final MemorySegment seg = MemorySegment.ofArray(arr);
     return hash(seg, offsetInts << INT_SHIFT, lengthInts << INT_SHIFT, seed);
   }
 
@@ -256,7 +259,7 @@ public class XxHash64 {
    */
   public static long hashLongs(final long[] arr, final int offsetLongs,
       final int lengthLongs, final long seed) {
-    MemorySegment seg = MemorySegment.ofArray(arr);
+    final MemorySegment seg = MemorySegment.ofArray(arr);
     return hash(seg, offsetLongs << LONG_SHIFT, lengthLongs << LONG_SHIFT, seed);
   }
 
@@ -271,7 +274,7 @@ public class XxHash64 {
    */
   public static long hashFloats(final float[] arr, final int offsetFloats,
       final int lengthFloats, final long seed) {
-    MemorySegment seg = MemorySegment.ofArray(arr);
+    final MemorySegment seg = MemorySegment.ofArray(arr);
     return hash(seg, offsetFloats << FLOAT_SHIFT, lengthFloats << FLOAT_SHIFT, seed);
   }
 
@@ -286,7 +289,7 @@ public class XxHash64 {
    */
   public static long hashDoubles(final double[] arr, final int offsetDoubles,
       final int lengthDoubles, final long seed) {
-    MemorySegment seg = MemorySegment.ofArray(arr);
+    final MemorySegment seg = MemorySegment.ofArray(arr);
     return hash(seg, offsetDoubles << DOUBLE_SHIFT, lengthDoubles << DOUBLE_SHIFT, seed);
   }
 
@@ -301,7 +304,7 @@ public class XxHash64 {
    */
   public static long hashString(final String str, final int offsetChars,
       final int lengthChars, final long seed) {
-    MemorySegment seg = MemorySegment.ofArray(str.toCharArray());
+    final MemorySegment seg = MemorySegment.ofArray(str.toCharArray());
     return hash(seg, offsetChars << CHAR_SHIFT, lengthChars << CHAR_SHIFT, seed);
   }
 

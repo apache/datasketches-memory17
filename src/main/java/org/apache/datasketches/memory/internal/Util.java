@@ -90,6 +90,7 @@ public final class Util {
    *
    * @param shortFileName the last name in the pathname's name sequence.
    * @return the absolute path of the given resource file's shortName.
+   * @throws IllegalArgumentException if resource cannot be found
    */
   public static String getResourcePath(final String shortFileName) {
     Objects.requireNonNull(shortFileName, "input parameter " + shortFileName + " cannot be null.");
@@ -115,11 +116,10 @@ public final class Util {
   }
 
   /**
-   * Returns a byte array of the contents of the file defined by the given resource file's
-   * shortFileName.
+   * Returns a byte array of the contents of the file defined by the given resource file's shortFileName.
    * @param shortFileName the last name in the pathname's name sequence.
-   * @return a byte array of the contents of the file defined by the given resource file's
-   * shortFileName.
+   * @return a byte array of the contents of the file defined by the given resource file's shortFileName.
+   * @throws IllegalArgumentException if resource cannot be read.
    */
   public static byte[] getResourceBytes(final String shortFileName) {
     try {

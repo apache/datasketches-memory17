@@ -173,6 +173,36 @@ public class MemoryTest {
   }
 
   @Test
+  public void checkByteBufferNonNativeHeap() {
+    int n = 10; //longs
+    byte[] arr = new byte[n * 8];
+    ByteBuffer bb = ByteBuffer.wrap(arr); //non-native order
+    WritableMemory wmem = WritableMemory.writableWrap(bb, BaseState.NON_NATIVE_BYTE_ORDER);
+    for (int i = 0; i < n; i++) { //write to wmem
+      wmem.putLong(i * 8, i);
+    }
+    for (int i = 0; i < n; i++) { //read from wmem
+      long v = wmem.getLong(i * 8);
+      assertEquals(v, i);
+    }
+    for (int i = 0; i < n; i++) { //read from BB
+      long v = bb.getLong(i * 8);
+      assertEquals(v, i);
+    }
+    Memory mem1 = Memory.wrap(arr, BaseState.NON_NATIVE_BYTE_ORDER);
+    for (int i = 0; i < n; i++) { //read from wrapped arr
+      long v = mem1.getLong(i * 8);
+      assertEquals(v, i);
+    }
+    //convert to RO
+    Memory mem = wmem;
+    for (int i = 0; i < n; i++) {
+      long v = mem.getLong(i * 8);
+      assertEquals(v, i);
+    }
+  }
+
+  @Test
   public void checkByteBufDirect() {
     int n = 1024; //longs
     ByteBuffer bb = ByteBuffer.allocateDirect(n * 8);
