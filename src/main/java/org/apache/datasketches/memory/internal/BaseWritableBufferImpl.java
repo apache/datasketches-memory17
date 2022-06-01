@@ -133,7 +133,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
-    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
+    final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final boolean byteBufferType = isByteBufferType();
     final int type = BUFFER | REGION
         | (readOnly ? READONLY : 0)
@@ -194,7 +194,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     final boolean duplicateType = true;
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
-    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
+    final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final boolean byteBufferType = isByteBufferType();
     final int type = BUFFER
         | (readOnly ? READONLY : 0)
@@ -250,7 +250,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
-    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
+    final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final boolean byteBufferType = isByteBufferType();
     final int type = MEMORY
         | (readOnly ? READONLY : 0)

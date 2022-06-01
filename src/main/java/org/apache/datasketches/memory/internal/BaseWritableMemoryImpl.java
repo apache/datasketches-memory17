@@ -136,7 +136,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
           scope); }
     catch (final IllegalArgumentException | IllegalStateException | UnsupportedOperationException
         | IOException | SecurityException e) { throw e; }
-    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
+    final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final int type = MEMORY | MAP | DIRECT
         | (localReadOnly ? READONLY : 0)
         | (nativeBOType ? NATIVE : NONNATIVE);
@@ -169,7 +169,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         capacityBytes,
         alignmentBytes,
         scope);
-    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
+    final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final int type = MEMORY | DIRECT
         | (nativeBOType ? NATIVE : NONNATIVE);
     return nativeBOType
@@ -206,7 +206,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
-    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
+    final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final boolean byteBufferType = isByteBufferType();
     final int type = MEMORY | REGION
         | (readOnly ? READONLY : 0)
@@ -257,7 +257,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     final boolean duplicateType = isDuplicateType();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
-    final boolean nativeBOType = Util.isNativeByteOrder(byteOrder);
+    final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final boolean byteBufferType = isByteBufferType();
     final int type = BUFFER
         | (readOnly ? READONLY : 0)

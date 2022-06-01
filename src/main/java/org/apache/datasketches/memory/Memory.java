@@ -27,7 +27,6 @@ import java.nio.ByteOrder;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
-import org.apache.datasketches.memory.internal.Util;
 
 import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
@@ -101,8 +100,6 @@ public interface Memory extends BaseState {
     Objects.requireNonNull(file, "File must be non-null.");
     Objects.requireNonNull(byteOrder, "ByteOrder must be non-null.");
     Objects.requireNonNull(scope, "ResourceScope must be non-null.");
-    Util.negativeCheck(fileOffsetBytes, "fileOffsetBytes");
-    Util.negativeCheck(capacityBytes, "capacityBytes");
     if (!file.canRead()) { throw new IllegalArgumentException("File must be readable."); }
     return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, scope, true, byteOrder);
   }
