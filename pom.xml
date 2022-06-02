@@ -31,8 +31,8 @@ under the License.
   </parent>
 
   <groupId>org.apache.datasketches</groupId>
-  <artifactId>datasketches-memory17</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <artifactId>datasketches-memory</artifactId>
+  <version>3.0.0-SNAPSHOT</version>
   <!-- Required for multi-module project -->
   <packaging>pom</packaging>
 
@@ -189,13 +189,6 @@ under the License.
         <scope>test</scope>
       </dependency>
       <dependency>
-        <!-- Used for UTF8 testing -->
-        <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java</artifactId>
-        <version>${protobuf-java.version}</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
         <!-- Used for xxHash testing -->
         <groupId>net.openhft</groupId>
         <artifactId>zero-allocation-hashing</artifactId>
@@ -290,7 +283,7 @@ under the License.
               <configuration>
                 <rules>
                   <requireJavaVersion>
-                    <version>[1.8,1.9),[8],[11,14),[17,18)</version>
+                    <version>[17,18)</version>
                   </requireJavaVersion>
                   <requireMavenVersion>
                     <version>[${maven.version},)</version>
