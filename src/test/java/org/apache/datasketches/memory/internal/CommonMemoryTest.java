@@ -48,6 +48,10 @@ public class CommonMemoryTest {
   }
 
   public static void setGetTests(WritableMemory mem) {
+    mem.putBoolean(0, true);
+    assertTrue(mem.getBoolean(0));
+    mem.putBoolean(0, false);
+    assertFalse(mem.getBoolean(0));
 
     mem.putByte(0, (byte) -1);
     assertEquals(mem.getByte(0), (byte) -1);

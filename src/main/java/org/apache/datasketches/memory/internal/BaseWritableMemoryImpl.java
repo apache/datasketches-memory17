@@ -290,6 +290,11 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   //PRIMITIVE getX() and getXArray()
 
   @Override
+  public final boolean getBoolean(final long offsetBytes) {
+    return getByte(offsetBytes) != 0;
+  }
+
+  @Override
   public final byte getByte(final long offsetBytes) {
     return MemoryAccess.getByteAtOffset(seg, offsetBytes);
   }
@@ -329,6 +334,12 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   }
 
   //  //PRIMITIVE putX() and putXArray() implementations
+
+  @Override
+  public final void putBoolean(final long offsetBytes, final boolean value) {
+    putByte(offsetBytes, value ? (byte)1 : 0);
+  }
+
 
   @Override
   public final void putByte(final long offsetBytes, final byte value) {

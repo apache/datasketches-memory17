@@ -388,6 +388,13 @@ public interface WritableMemory extends Memory {
   //PRIMITIVE putX() and putXArray()
 
   /**
+   * Puts the boolean value at the given offset
+   * @param offsetBytes offset bytes relative to this <i>WritableMemory</i> start
+   * @param value the value to put
+   */
+  void putBoolean(long offsetBytes, boolean value);
+
+  /**
    * Puts the byte value at the given offset
    * @param offsetBytes offset bytes relative to this <i>WritableMemory</i> start
    * @param value the value to put

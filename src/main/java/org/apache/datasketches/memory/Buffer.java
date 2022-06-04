@@ -177,6 +177,21 @@ public interface Buffer extends BaseBuffer {
   //PRIMITIVE getX() and getXArray()
 
   /**
+   * Gets the boolean value at the current position.
+   * Increments the position by <i>Byte.BYTES</i>.
+   * @return the boolean at the current position
+   */
+  boolean getBoolean();
+
+  /**
+   * Gets the boolean value at the given offset.
+   * This does not change the position.
+   * @param offsetBytes offset bytes relative to this Memory start
+   * @return the boolean at the given offset
+   */
+  boolean getBoolean(long offsetBytes);
+
+  /**
    * Gets the byte value at the current position.
    * Increments the position by <i>Byte.BYTES</i>.
    * @return the byte at the current position

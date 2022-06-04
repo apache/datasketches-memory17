@@ -267,6 +267,16 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   //PRIMITIVE getX() and getXArray()
 
   @Override
+  public final boolean getBoolean() {
+    return getByte() != 0;
+  }
+
+  @Override
+  public final boolean getBoolean(final long offsetBytes) {
+    return getByte(offsetBytes) != 0;
+  }
+
+  @Override
   public final byte getByte() {
     final long pos = getPosition();
     final byte aByte = MemoryAccess.getByteAtOffset(seg, pos);
@@ -304,6 +314,16 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
    */
 
   //PRIMITIVE putX() and putXArray() implementations
+
+  @Override
+  public final void putBoolean(final boolean value) {
+    putByte(value ? (byte)1 : 0);
+  }
+
+  @Override
+  public final void putBoolean(final long offsetBytes, final boolean value) {
+    putByte(offsetBytes, value ? (byte)1 : 0);
+  }
 
   @Override
   public final void putByte(final byte value) {

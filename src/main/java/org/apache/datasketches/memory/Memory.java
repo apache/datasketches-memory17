@@ -279,6 +279,13 @@ public interface Memory extends BaseState {
   //PRIMITIVE getX() and getXArray()
 
   /**
+   * Gets the boolean value at the given offset
+   * @param offsetBytes offset bytes relative to this Memory start
+   * @return the boolean at the given offset
+   */
+  boolean getBoolean(long offsetBytes);
+
+  /**
    * Gets the byte value at the given offset
    * @param offsetBytes offset bytes relative to this Memory start
    * @return the byte at the given offset

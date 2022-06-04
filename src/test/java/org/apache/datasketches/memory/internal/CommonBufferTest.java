@@ -45,6 +45,8 @@ public class CommonBufferTest {
   }
 
   public static void setGetTests(WritableBuffer buf) {
+    buf.putBoolean(true);
+    buf.putBoolean(false);
     buf.putByte((byte) -1);
     buf.putByte((byte) 0);
     buf.putChar('A');
@@ -62,6 +64,10 @@ public class CommonBufferTest {
 
     buf.resetPosition();
 
+    assertEquals(buf.getBoolean(buf.getPosition()), true);
+    assertEquals(buf.getBoolean(), true);
+    assertEquals(buf.getBoolean(buf.getPosition()), false);
+    assertEquals(buf.getBoolean(), false);
     assertEquals(buf.getByte(buf.getPosition()), (byte) -1);
     assertEquals(buf.getByte(), (byte) -1);
     assertEquals(buf.getByte(buf.getPosition()), (byte)0);
@@ -93,6 +99,8 @@ public class CommonBufferTest {
   }
 
   public static void setGetTests2(WritableBuffer buf) {
+    buf.putBoolean(0, true);
+    buf.putBoolean(1, false);
     buf.putByte(2, (byte) -1);
     buf.putByte(3, (byte) 0);
     buf.putChar(4,'A');
@@ -108,6 +116,8 @@ public class CommonBufferTest {
     buf.putDouble(44, Double.MAX_VALUE);
     buf.putDouble(52, Double.MIN_VALUE);
 
+    assertEquals(buf.getBoolean(0), true);
+    assertEquals(buf.getBoolean(1), false);
     assertEquals(buf.getByte(2), (byte) -1);
     assertEquals(buf.getByte(3), (byte)0);
     assertEquals(buf.getChar(4), 'A');

@@ -177,6 +177,21 @@ public interface WritableBuffer extends Buffer {
   //PRIMITIVE putX() and putXArray()
 
   /**
+   * Puts the boolean value at the current position.
+   * Increments the position by <i>Byte.BYTES</i>.
+   * @param value the value to put
+   */
+  void putBoolean(boolean value);
+
+  /**
+   * Puts the boolean value at the given offset.
+   * This does not change the position.
+   * @param offsetBytes offset bytes relative to this <i>WritableMemory</i> start
+   * @param value the value to put
+   */
+  void putBoolean(long offsetBytes, boolean value);
+
+  /**
    * Puts the byte value at the current position.
    * Increments the position by <i>Byte.BYTES</i>.
    * @param value the value to put
