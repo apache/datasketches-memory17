@@ -76,12 +76,12 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
         | (seg.isMapped() ? MAP : 0);
     if (byteOrder == ByteOrder.nativeOrder()) {
       type |= NATIVE;
-      final WritableBuffer wbuf = new BBWritableBufferImpl(seg, type);
+      final WritableBuffer wbuf = NativeWritableBufferImpl.notMemoryExtendable(seg, type);
       wbuf.setStartPositionEnd(0, byteBuffer.position(), byteBuffer.limit());
       return wbuf;
     }
     type |= NONNATIVE;
-    final WritableBuffer wbuf = new BBNonNativeWritableBufferImpl(seg, type);
+    final WritableBuffer wbuf = NonNativeWritableBufferImpl.notMemoryExtendable(seg, type);
     wbuf.setStartPositionEnd(0, byteBuffer.position(), byteBuffer.limit());
     return wbuf;
   }
@@ -128,20 +128,20 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
         | (nativeBOType ? NATIVE : NONNATIVE)
         | (byteBufferType ? BYTEBUF : 0);
     if (byteBufferType) {
-      if (nativeBOType) { return new BBWritableBufferImpl(slice, type); }
-      return new BBNonNativeWritableBufferImpl(slice, type);
+      if (nativeBOType) { return NativeWritableBufferImpl.notMemoryExtendable(slice, type); }
+      return NonNativeWritableBufferImpl.notMemoryExtendable(slice, type);
     }
     if (mapType) {
-      if (nativeBOType) { return new MapWritableBufferImpl(slice, type); }
-      return new MapNonNativeWritableBufferImpl(slice, type);
+      if (nativeBOType) { return NativeWritableBufferImpl.notMemoryExtendable(slice, type); }
+      return NonNativeWritableBufferImpl.notMemoryExtendable(slice, type);
     }
     if (directType) {
-      if (nativeBOType) { return new DirectWritableBufferImpl(slice, type, memReqSvr); }
-      return new DirectNonNativeWritableBufferImpl(slice, type, memReqSvr);
+      if (nativeBOType) { return NativeWritableBufferImpl.memoryExtendable(slice, type, memReqSvr); }
+      return NonNativeWritableBufferImpl.memoryExtendable(slice, type, memReqSvr);
     }
     //else heap type
-    if (nativeBOType) { return new HeapWritableBufferImpl(slice, type, memReqSvr); }
-    return new HeapNonNativeWritableBufferImpl(slice, type, memReqSvr);
+    if (nativeBOType) { return NativeWritableBufferImpl.memoryExtendable(slice, type, memReqSvr); }
+    return NonNativeWritableBufferImpl.memoryExtendable(slice, type, memReqSvr);
   }
 
   //DUPLICATES
@@ -192,20 +192,20 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
 
     WritableBuffer wbuf;
     if (byteBufferType) {
-      if (nativeBOType) { wbuf = new BBWritableBufferImpl(seg2, type); }
-      else { wbuf = new BBNonNativeWritableBufferImpl(seg2, type); }
+      if (nativeBOType) { wbuf = NativeWritableBufferImpl.notMemoryExtendable(seg2, type); }
+      else { wbuf = NonNativeWritableBufferImpl.notMemoryExtendable(seg2, type); }
     }
     if (mapType) {
-      if (nativeBOType) { wbuf = new MapWritableBufferImpl(seg2, type); }
-      else { wbuf = new MapNonNativeWritableBufferImpl(seg2, type); }
+      if (nativeBOType) { wbuf = NativeWritableBufferImpl.notMemoryExtendable(seg2, type); }
+      else { wbuf = NonNativeWritableBufferImpl.notMemoryExtendable(seg2, type); }
     }
     if (directType) {
-      if (nativeBOType) { wbuf = new DirectWritableBufferImpl(seg2, type, memReqSvr); }
-      else { wbuf = new DirectNonNativeWritableBufferImpl(seg2, type, memReqSvr); }
+      if (nativeBOType) { wbuf = NativeWritableBufferImpl.memoryExtendable(seg2, type, memReqSvr); }
+      else { wbuf = NonNativeWritableBufferImpl.memoryExtendable(seg2, type, memReqSvr); }
     }
     //else heap type
-    if (nativeBOType) { wbuf = new HeapWritableBufferImpl(seg2, type, memReqSvr); }
-    else { wbuf = new HeapNonNativeWritableBufferImpl(seg2, type, memReqSvr); }
+    if (nativeBOType) { wbuf = NativeWritableBufferImpl.memoryExtendable(seg2, type, memReqSvr); }
+    else { wbuf = NonNativeWritableBufferImpl.memoryExtendable(seg2, type, memReqSvr); }
     wbuf.setStartPositionEnd(getStart(), getPosition(), getEnd());
     return wbuf;
   }
@@ -247,20 +247,20 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
         | (byteBufferType ? BYTEBUF : 0);
     WritableMemory wmem;
     if (byteBufferType) {
-      if (nativeBOType) { wmem = new BBWritableMemoryImpl(seg2, type); }
-      else { wmem = new BBNonNativeWritableMemoryImpl(seg2, type); }
+      if (nativeBOType) { wmem = NativeWritableMemoryImpl.notMemoryExtendable(seg2, type); }
+      else { wmem = NonNativeWritableMemoryImpl.notMemoryExtendable(seg2, type); }
     }
     if (mapType) {
-      if (nativeBOType) { wmem = new MapWritableMemoryImpl(seg2, type); }
-      else { wmem = new MapNonNativeWritableMemoryImpl(seg2, type); }
+      if (nativeBOType) { wmem = NativeWritableMemoryImpl.notMemoryExtendable(seg2, type); }
+      else { wmem = NonNativeWritableMemoryImpl.notMemoryExtendable(seg2, type); }
     }
     if (directType) {
-      if (nativeBOType) { wmem = new DirectWritableMemoryImpl(seg2, type, memReqSvr); }
-      else { wmem = new DirectNonNativeWritableMemoryImpl(seg2, type, memReqSvr); }
+      if (nativeBOType) { wmem = NativeWritableMemoryImpl.memoryExtendable(seg2, type, memReqSvr); }
+      else { wmem = NonNativeWritableMemoryImpl.memoryExtendable(seg2, type, memReqSvr); }
     }
     //else heap type
-    if (nativeBOType) { wmem = new HeapWritableMemoryImpl(seg2, type, memReqSvr); }
-    else { wmem = new HeapNonNativeWritableMemoryImpl(seg2, type, memReqSvr); }
+    if (nativeBOType) { wmem = NativeWritableMemoryImpl.memoryExtendable(seg2, type, memReqSvr); }
+    else { wmem = NonNativeWritableMemoryImpl.memoryExtendable(seg2, type, memReqSvr); }
     return wmem;
   }
 
