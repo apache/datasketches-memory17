@@ -20,7 +20,6 @@
 package org.apache.datasketches.memory.internal;
 
 import org.apache.datasketches.memory.BaseBuffer;
-import org.apache.datasketches.memory.ReadOnlyException;
 
 import jdk.incubator.foreign.MemorySegment;
 
@@ -141,31 +140,11 @@ public abstract class BaseBufferImpl extends BaseStateImpl implements BaseBuffer
     pos = newPos;
   }
 
-  final void incrementAndAssertPositionForWrite(final long position, final long increment) {
-    assert !isReadOnly() : "BufferImpl is read-only.";
-    final long newPos = position + increment;
-    assertInvariants(start, newPos, end, capacity);
-    pos = newPos;
-  }
-
   //checks are used for arrays and apply at runtime
   final void incrementAndCheckPositionForRead(final long position, final long increment) {
     final long newPos = position + increment;
     checkInvariants(start, newPos, end, capacity);
     pos = newPos;
-  }
-
-  final void incrementAndCheckPositionForWrite(final long position, final long increment) {
-    checkValidForWrite();
-    final long newPos = position + increment;
-    checkInvariants(start, newPos, end, capacity);
-    pos = newPos;
-  }
-
-  final void checkValidForWrite() {
-    if (isReadOnly()) {
-      throw new ReadOnlyException("BufferImpl is read-only.");
-    }
   }
 
   /**

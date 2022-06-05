@@ -141,19 +141,6 @@ public abstract class BaseStateImpl implements BaseState {
     return isNonNativeType() ? NON_NATIVE_BYTE_ORDER : ByteOrder.nativeOrder();
   }
 
-  /**
-   * Returns true if the given byteOrder is the same as the native byte order.
-   * @param byteOrder the given byte order
-   * @return true if the given byteOrder is the same as the native byte order.
-   * @throws IllegalArgumentException if ByteOrder is null
-   */
-  public static boolean isNativeByteOrder(final ByteOrder byteOrder) {
-    if (byteOrder == null) {
-      throw new IllegalArgumentException("ByteOrder parameter cannot be null.");
-    }
-    return ByteOrder.nativeOrder() == byteOrder;
-  }
-
   @Override
   public final boolean isByteOrderCompatible(final ByteOrder byteOrder) {
     final ByteOrder typeBO = getTypeByteOrder();

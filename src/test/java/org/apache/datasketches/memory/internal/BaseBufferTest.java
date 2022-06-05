@@ -78,7 +78,7 @@ public class BaseBufferTest {
   }
 
   @Test
-  public void checkCheckNotValidAfterTWR() {
+  public void checkCheckNotAliveAfterTWR() {
     WritableMemory wmem;
     Buffer buf;
     try (ResourceScope scope = ResourceScope.newConfinedScope()) {

@@ -59,21 +59,6 @@ public class BaseStateTest {
     assertTrue(wmem.isByteOrderCompatible(ByteOrder.nativeOrder()));
   }
 
-  @Test(expectedExceptions = IllegalArgumentException.class)
-  public void checkByteOrderNull() {
-    BaseStateImpl.isNativeByteOrder(null);
-    fail();
-  }
-
-  @Test
-  public void checkIsNativeByteOrder() {
-    assertTrue(BaseStateImpl.isNativeByteOrder(ByteOrder.nativeOrder()));
-    try {
-      BaseStateImpl.isNativeByteOrder(null);
-      fail();
-    } catch (final IllegalArgumentException e) {}
-  }
-
   @Test
   public void checkXxHash64() {
     WritableMemory mem = WritableMemory.allocate(8);

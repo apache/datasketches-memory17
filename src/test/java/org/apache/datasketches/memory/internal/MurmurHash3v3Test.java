@@ -20,7 +20,7 @@
 package org.apache.datasketches.memory.internal;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.datasketches.memory.internal.MurmurHash3v3.*;
+import static org.apache.datasketches.memory.MurmurHash3.*;
 import static org.testng.Assert.fail;
 
 import org.apache.datasketches.memory.DefaultMemoryRequestServer;
@@ -30,6 +30,7 @@ import org.apache.datasketches.memory.WritableMemory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import jdk.incubator.foreign.MemorySegment;
 import jdk.incubator.foreign.ResourceScope;
 
 /**
@@ -46,6 +47,20 @@ public class MurmurHash3v3Test {
     String keyStr = "The quick brown fox jumps over the lazy dog";
     byte[] key = keyStr.getBytes(UTF_8);
     long[] result = hash(key, 0);
+    //Should be:
+    long h1 = 0xe34bbc7bbc071b6cL;
+    long h2 = 0x7a433ca9c49a9347L;
+    Assert.assertEquals(result[0], h1);
+    Assert.assertEquals(result[1], h2);
+  }
+
+  @Test
+  public void checkByteArrRemainderGT8withSegment() { //byte[], remainder > 8
+    String keyStr = "The quick brown fox jumps over the lazy dog";
+    byte[] key = keyStr.getBytes(UTF_8);
+    long[] out = new long[2];
+    MemorySegment seg = MemorySegment.ofArray(key);
+    long[] result = hash(seg, 0, seg.byteSize(), 0, out);
     //Should be:
     long h1 = 0xe34bbc7bbc071b6cL;
     long h2 = 0x7a433ca9c49a9347L;
@@ -237,7 +252,9 @@ public class MurmurHash3v3Test {
   @Test
   public void checkEmptyOrNullExceptions() {
     try {
-      long[] arr = null; hash(arr, 1L); fail();
+      long[] arr = null;
+      hash(arr, 1L);
+      fail();
     } catch (final IllegalArgumentException e) { }
     try {
       int[] arr = null; hash(arr, 1L); fail();
