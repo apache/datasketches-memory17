@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.file.InvalidPathException;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.Buffer;
@@ -74,12 +75,11 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final MemoryRequestServer memReqSvr) {
     int type = MEMORY
         | (seg.isReadOnly() ? READONLY : 0);
-    if (byteOrder == ByteOrder.nativeOrder()) {
-      type |= NATIVE;
-      return NativeWritableMemoryImpl.memoryExtendable(seg, type, memReqSvr);
+    if (byteOrder == NON_NATIVE_BYTE_ORDER) {
+      type |= NONNATIVE;
+      return NonNativeWritableMemoryImpl.memoryExtendable(seg, type, memReqSvr);
     }
-    type |= NONNATIVE;
-    return NonNativeWritableMemoryImpl.memoryExtendable(seg, type, memReqSvr);
+    return NativeWritableMemoryImpl.memoryExtendable(seg, type, memReqSvr);
   }
 
   //BYTE BUFFER RESOURCE
@@ -95,12 +95,11 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         | (localReadOnly ? READONLY : 0)
         | (seg.isNative() ? DIRECT : 0)
         | (seg.isMapped() ? MAP : 0);
-    if (byteOrder == ByteOrder.nativeOrder()) {
-      type |= NATIVE;
-      return NativeWritableMemoryImpl.notMemoryExtendable(seg, type);
+    if (byteOrder == NON_NATIVE_BYTE_ORDER) {
+      type |= NONNATIVE;
+      return NonNativeWritableMemoryImpl.notMemoryExtendable(seg, type);
     }
-    type |= NONNATIVE;
-    return NonNativeWritableMemoryImpl.notMemoryExtendable(seg, type);
+    return NativeWritableMemoryImpl.notMemoryExtendable(seg, type);
   }
 
   //MAP RESOURCE
@@ -115,7 +114,13 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
    * @param localReadOnly the requested read-only state
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return mapped WritableMemory.
-   * @throws Exception for various IO exceptions
+   * @throws InvalidPathException for invalid path
+   * @throws IllegalStateException - if scope has been already closed, or if access occurs from a thread other
+   * than the thread owning scope.
+   * @throws UnsupportedOperationException - if an unsupported map mode is specified.
+   * @throws IOException - if the specified path does not point to an existing file, or if some other I/O error occurs.
+   * @throws SecurityException - If a security manager is installed and it denies an unspecified permission
+   * required by the implementation.
    */
   @SuppressWarnings("resource")
   public static WritableMemory wrapMap(
@@ -124,7 +129,9 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final long capacityBytes,
       final ResourceScope scope,
       final boolean localReadOnly,
-      final ByteOrder byteOrder) throws Exception {
+      final ByteOrder byteOrder)
+          throws InvalidPathException, IllegalStateException, UnsupportedOperationException, IOException,
+          SecurityException {
     final FileChannel.MapMode mapMode = (localReadOnly) ? READ_ONLY : READ_WRITE;
     final MemorySegment seg;
     try {

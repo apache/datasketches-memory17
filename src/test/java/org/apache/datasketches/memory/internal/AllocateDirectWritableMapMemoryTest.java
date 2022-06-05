@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteOrder;
+import java.nio.file.InvalidPathException;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.DefaultMemoryRequestServer;
@@ -52,12 +53,14 @@ public class AllocateDirectWritableMapMemoryTest {
   private static final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
 
   @BeforeClass
-  public void setReadOnly() {
+  public void setReadOnly() throws IOException {
     UtilTest.setGettysburgAddressFileToReadOnly();
   }
 
   @Test
-  public void simpleMap() throws Exception {
+  public void simpleMap()
+      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     File file = getResourceFile("GettysburgAddress.txt");
     Memory mem = null;
     try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -71,17 +74,15 @@ public class AllocateDirectWritableMapMemoryTest {
   }
 
   @Test
-  public void copyOffHeapToMemoryMappedFile() throws Exception {
+  public void copyOffHeapToMemoryMappedFile()
+      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     long numBytes = 1L << 10; //small for unit tests.  Make it larger than 2GB if you like.
     long numLongs = numBytes >>> 3;
 
     File file = new File("TestFile.bin"); //create a dummy file
     if (file.exists()) {
-      try {
-        java.nio.file.Files.delete(file.toPath());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+      java.nio.file.Files.delete(file.toPath());
     }
     assertTrue(file.createNewFile());
     assertTrue (file.setWritable(true, false)); //writable=true, ownerOnly=false
@@ -108,14 +109,12 @@ public class AllocateDirectWritableMapMemoryTest {
   }
 
   @Test
-  public void checkNonNativeFile() throws Exception {
+  public void checkNonNativeFile()
+      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     File file = new File("TestFile2.bin");
     if (file.exists()) {
-      try {
-        java.nio.file.Files.delete(file.toPath());
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+      java.nio.file.Files.delete(file.toPath());
     }
     assertTrue(file.createNewFile());
     assertTrue(file.setWritable(true, false)); //writable=true, ownerOnly=false
@@ -133,7 +132,9 @@ public class AllocateDirectWritableMapMemoryTest {
 
   @SuppressWarnings("resource")
   @Test
-  public void testMapExceptionNoTWR() throws Exception {
+  public void testMapExceptionNoTWR()
+      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     File dummy = createFile("dummy.txt", ""); //zero length
     ResourceScope scope = ResourceScope.newConfinedScope();
     Memory.map(dummy, 0, dummy.length(), scope, ByteOrder.nativeOrder());
@@ -141,20 +142,23 @@ public class AllocateDirectWritableMapMemoryTest {
   }
 
   @Test(expectedExceptions = ReadOnlyException.class)
-  public void simpleMap2() throws Exception {
+  public void simpleMap2()
+      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     File file = getResourceFile("GettysburgAddress.txt");
     assertTrue(file.canRead());
     assertFalse(file.canWrite());
     WritableMemory wmem = null;
     try (ResourceScope scope = ResourceScope.newConfinedScope()) {
-      wmem = WritableMemory.writableMap(file, scope);
-      //throws ReadOnlyException
+      wmem = WritableMemory.writableMap(file, scope); //throws ReadOnlyException
       wmem.getCapacity();
     }
   }
 
   @Test(expectedExceptions = ReadOnlyException.class)
-  public void checkReadException() throws Exception  {
+  public void checkReadException()
+      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     File file = getResourceFile("GettysburgAddress.txt");
     WritableMemory wmem = null;
     try (ResourceScope scope = ResourceScope.newConfinedScope()) {
@@ -165,7 +169,9 @@ public class AllocateDirectWritableMapMemoryTest {
   }
 
   @Test
-  public void testForce() throws Exception {
+  public void testForce()
+      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     String origStr = "Corectng spellng mistks";
     File origFile = createFile("force_original.txt", origStr); //23
     assertTrue(origFile.setWritable(true, false));

@@ -29,6 +29,7 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.List;
@@ -51,7 +52,7 @@ public class MemoryTest {
 
 
   @BeforeClass
-  public void setReadOnly() {
+  public void setReadOnly() throws IOException {
     UtilTest.setGettysburgAddressFileToReadOnly();
   }
 

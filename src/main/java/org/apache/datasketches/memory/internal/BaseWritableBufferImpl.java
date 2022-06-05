@@ -74,14 +74,13 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
         | (localReadOnly ? READONLY : 0)
         | (seg.isNative() ? DIRECT : 0)
         | (seg.isMapped() ? MAP : 0);
-    if (byteOrder == ByteOrder.nativeOrder()) {
-      type |= NATIVE;
-      final WritableBuffer wbuf = NativeWritableBufferImpl.notMemoryExtendable(seg, type);
+    if (byteOrder == NON_NATIVE_BYTE_ORDER) {
+      type |= NONNATIVE;
+      final WritableBuffer wbuf = NonNativeWritableBufferImpl.notMemoryExtendable(seg, type);
       wbuf.setStartPositionEnd(0, byteBuffer.position(), byteBuffer.limit());
       return wbuf;
     }
-    type |= NONNATIVE;
-    final WritableBuffer wbuf = NonNativeWritableBufferImpl.notMemoryExtendable(seg, type);
+    final WritableBuffer wbuf = NativeWritableBufferImpl.notMemoryExtendable(seg, type);
     wbuf.setStartPositionEnd(0, byteBuffer.position(), byteBuffer.limit());
     return wbuf;
   }

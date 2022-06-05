@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.file.InvalidPathException;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
@@ -79,9 +80,18 @@ public interface Memory extends BaseState {
    * @param file the given file to map. It must be non-null with a non-negative length and readable.
    * @param scope the given ResourceScope. It must be non-null.
    * @return mapped Memory.
-   * @throws Exception various IO exceptions
+   * @throws IllegalArgumentException -- if file is not readable.
+   * @throws InvalidPathException for invalid path
+   * @throws IllegalStateException - if scope has been already closed, or if access occurs from a thread other
+   * than the thread owning scope.
+   * @throws UnsupportedOperationException - if an unsupported map mode is specified.
+   * @throws IOException - if the specified path does not point to an existing file, or if some other I/O error occurs.
+   * @throws SecurityException - If a security manager is installed and it denies an unspecified permission
+   * required by the implementation.
    */
-  static Memory map(File file, ResourceScope scope) throws Exception {
+  static Memory map(File file, ResourceScope scope)
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     return map(file, 0, file.length(), scope, ByteOrder.nativeOrder());
   }
 
@@ -93,12 +103,19 @@ public interface Memory extends BaseState {
    * @param scope the given ResourceScope. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return mapped Memory
-   * @throws Exception various IO exceptions
-   * @throws IllegalArgumentException if file is not readable
+   * @throws IllegalArgumentException -- if file is not readable.
+   * @throws InvalidPathException for invalid path
+   * @throws IllegalStateException - if scope has been already closed, or if access occurs from a thread other
+   * than the thread owning scope.
+   * @throws UnsupportedOperationException - if an unsupported map mode is specified.
+   * @throws IOException - if the specified path does not point to an existing file, or if some other I/O error occurs.
+   * @throws SecurityException - If a security manager is installed and it denies an unspecified permission
+   * required by the implementation.
    */
   @SuppressWarnings("resource")
   static Memory map(File file, long fileOffsetBytes, long capacityBytes, ResourceScope scope, ByteOrder byteOrder)
-      throws Exception {
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      IOException, SecurityException {
     Objects.requireNonNull(file, "File must be non-null.");
     Objects.requireNonNull(byteOrder, "ByteOrder must be non-null.");
     Objects.requireNonNull(scope, "ResourceScope must be non-null.");

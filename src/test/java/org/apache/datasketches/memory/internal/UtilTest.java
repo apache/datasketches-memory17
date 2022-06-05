@@ -41,8 +41,7 @@ public class UtilTest {
   private static final String LS = System.getProperty("line.separator");
 
 
-  static final String getFileAttributes(File file) {
-    try {
+  static final String getFileAttributes(File file) throws IOException {
     PosixFileAttributes attrs = Files.getFileAttributeView(
         file.toPath(), PosixFileAttributeView.class, new LinkOption[0]).readAttributes();
     String s = String.format("%s: %s %s %s%n",
@@ -51,18 +50,11 @@ public class UtilTest {
         attrs.group().getName(),
         PosixFilePermissions.toString(attrs.permissions()));
     return s;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
-  static final void setGettysburgAddressFileToReadOnly() {
+  static final void setGettysburgAddressFileToReadOnly() throws IOException {
     File file = getResourceFile("GettysburgAddress.txt");
-    try {
     Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString("r--r--r--"));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
   }
 
   //Resources

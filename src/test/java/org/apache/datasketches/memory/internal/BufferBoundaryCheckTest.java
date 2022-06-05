@@ -19,6 +19,8 @@
 
 package org.apache.datasketches.memory.internal;
 
+import static org.testng.Assert.fail;
+
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
 
@@ -31,7 +33,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.getByte(7);
     try {
       writableMemory.getByte(8);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -42,7 +44,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.putByte(7, (byte) 1);
     try {
       writableMemory.putByte(8, (byte) 1);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -53,7 +55,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.getChar(6);
     try {
       writableMemory.getChar(7);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -64,7 +66,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.putChar(6, 'a');
     try {
       writableMemory.putChar(7, 'a');
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -75,7 +77,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.getShort(6);
     try {
       writableMemory.getShort(7);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -86,7 +88,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.putShort(6, (short) 1);
     try {
       writableMemory.putShort(7, (short) 1);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -97,7 +99,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.getInt(4);
     try {
       writableMemory.getInt(5);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -108,7 +110,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.putInt(4, 1);
     try {
       writableMemory.putInt(5, 1);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -119,7 +121,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.getFloat(4);
     try {
       writableMemory.getFloat(5);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -130,7 +132,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.putFloat(4, 1f);
     try {
       writableMemory.putFloat(5, 1f);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -141,7 +143,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.getLong(0);
     try {
       writableMemory.getLong(1);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -152,7 +154,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.putLong(0, 1L);
     try {
       writableMemory.putLong(1, 1L);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -163,7 +165,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.getDouble(0);
     try {
       writableMemory.getDouble(1);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }
@@ -174,7 +176,7 @@ public class BufferBoundaryCheckTest {
     writableMemory.putDouble(0, 1d);
     try {
       writableMemory.putDouble(1, 1d);
-      throw new RuntimeException("Expected IndexOutOfBoundsException");
+      fail("Expected IndexOutOfBoundsException");
     } catch (final IndexOutOfBoundsException expected) {
       // ignore
     }

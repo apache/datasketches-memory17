@@ -36,6 +36,16 @@ under the License.
     <Class name="~.*\.*Test" />
   </Match>
   
+  <Match>   <!-- Exclude for test classes; too many False Positives. -->
+    <Bug pattern="THROWS_METHOD_THROWS_CLAUSE_BASIC_EXCEPTION" />
+    <Class name="~.*\.*Test" />
+  </Match>
+
+  <Match>   <!-- Exclude for test classes; too many False Positives. -->
+    <Bug pattern="RV_RETURN_VALUE_IGNORED_BAD_PRACTICE" />
+    <Class name="~.*\.*Test" />
+  </Match>
+
 </FindBugsFilter>
 
 
