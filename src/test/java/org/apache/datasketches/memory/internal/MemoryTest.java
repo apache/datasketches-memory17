@@ -35,7 +35,6 @@ import java.nio.ByteOrder;
 import java.util.List;
 
 import org.apache.datasketches.memory.BaseState;
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableBuffer;
@@ -48,7 +47,7 @@ import jdk.incubator.foreign.ResourceScope;
 
 public class MemoryTest {
   private static final String LS = System.getProperty("line.separator");
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
 
   @BeforeClass

@@ -25,7 +25,8 @@ import org.apache.datasketches.memory.MemoryRequestServer;
 import jdk.incubator.foreign.MemorySegment;
 
 /**
- * A new positional API. This is different from and simpler than Java BufferImpl positional approach.
+ * This implements the positional API.
+ * This is different from and simpler than Java BufferImpl positional approach.
  * <ul><li>All based on longs instead of ints.</li>
  * <li>Eliminated "mark". Rarely used and confusing with its silent side effects.</li>
  * <li>The invariants are {@code 0 <= start <= position <= end <= capacity}.</li>
@@ -41,7 +42,7 @@ import jdk.incubator.foreign.MemorySegment;
  *
  * @author Lee Rhodes
  */
-public abstract class BaseBufferImpl extends BaseStateImpl implements BaseBuffer {
+abstract class BaseBufferImpl extends BaseStateImpl implements BaseBuffer {
   private long capacity;
   private long start = 0;
   private long pos = 0;

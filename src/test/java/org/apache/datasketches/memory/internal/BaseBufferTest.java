@@ -21,8 +21,8 @@ package org.apache.datasketches.memory.internal;
 
 import static org.testng.Assert.fail;
 
+import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableMemory;
@@ -34,7 +34,7 @@ import jdk.incubator.foreign.ResourceScope;
  * @author Lee Rhodes
  */
 public class BaseBufferTest {
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   @Test
   public void checkLimits() {

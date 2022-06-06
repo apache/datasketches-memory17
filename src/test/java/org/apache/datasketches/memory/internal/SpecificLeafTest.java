@@ -30,7 +30,6 @@ import java.nio.ByteOrder;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableMemory;
@@ -42,7 +41,7 @@ import jdk.incubator.foreign.ResourceScope;
  * @author Lee Rhodes
  */
 public class SpecificLeafTest {
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   @Test
   public void checkByteBufferLeafs() {

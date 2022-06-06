@@ -24,7 +24,6 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
 import org.apache.datasketches.memory.BaseState;
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
@@ -32,7 +31,7 @@ import org.testng.annotations.Test;
 import jdk.incubator.foreign.ResourceScope;
 
 public class AllocateDirectMemoryTest {
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   @SuppressWarnings("resource")
   @Test
@@ -53,7 +52,7 @@ public class AllocateDirectMemoryTest {
   }
 
   @Test
-  public void checkMemoryRequestServer() {
+  public void checkDefaultMemoryRequestServer() {
     int longs1 = 32;
     int bytes1 = longs1 << 3;
     WritableMemory wmem = null;
@@ -68,10 +67,6 @@ public class AllocateDirectMemoryTest {
 
       int longs2 = 64;
       int bytes2 = longs2 << 3;
-      MemoryRequestServer memReqSvr = wmem.getMemoryRequestServer();
-      if (memReqSvr == null) {
-        memReqSvr = new DefaultMemoryRequestServer();
-      }
       WritableMemory newWmem = memReqSvr.request(wmem, bytes2); //on the heap
       assertFalse(newWmem.isDirect()); //on heap by default
       for (int i = 0; i < longs2; i++) {

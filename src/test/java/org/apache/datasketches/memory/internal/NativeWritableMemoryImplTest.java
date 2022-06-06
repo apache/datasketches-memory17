@@ -29,10 +29,8 @@ import java.nio.ByteOrder;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
-import org.apache.datasketches.memory.ReadOnlyException;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
@@ -40,7 +38,7 @@ import org.testng.annotations.Test;
 import jdk.incubator.foreign.ResourceScope;
 
 public class NativeWritableMemoryImplTest {
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   //Simple Native direct
 
@@ -454,7 +452,7 @@ public class NativeWritableMemoryImplTest {
     //println(mem.toHexString("HeapBB", 0, memCapacity));
   }
 
-  @Test(expectedExceptions = ReadOnlyException.class)
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void checkWrapWithBBReadonly2() {
     int memCapacity = 64;
     ByteBuffer byteBuf = ByteBuffer.allocate(memCapacity);
@@ -485,7 +483,7 @@ public class NativeWritableMemoryImplTest {
     //println(mem.toHexString("HeapBB", 0, memCapacity));
   }
 
-  @Test(expectedExceptions = ReadOnlyException.class)
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void checkWrapWithDirectBBReadonlyPut() {
     int memCapacity = 64;
     ByteBuffer byteBuf = ByteBuffer.allocateDirect(memCapacity);
@@ -646,14 +644,14 @@ public class NativeWritableMemoryImplTest {
     assertEquals(wbuf.getEnd(), 64);
   }
 
-  @Test(expectedExceptions = ReadOnlyException.class)
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void checkAsWritableRegionRO() {
     ByteBuffer byteBuf = ByteBuffer.allocate(64);
     WritableMemory wmem = (WritableMemory) Memory.wrap(byteBuf);
     wmem.writableRegion(0, 1);
   }
 
-  @Test(expectedExceptions = ReadOnlyException.class)
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void checkAsWritableBufferRO() {
     ByteBuffer byteBuf = ByteBuffer.allocate(64);
     WritableMemory wmem = (WritableMemory) Memory.wrap(byteBuf);

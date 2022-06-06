@@ -26,7 +26,6 @@ import java.util.Objects;
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
-import org.apache.datasketches.memory.ReadOnlyException;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 
@@ -69,7 +68,21 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
       final ByteBuffer byteBuffer,
       final boolean localReadOnly,
       final ByteOrder byteOrder) {
-    final ByteBuffer byteBuf = localReadOnly ? byteBuffer.asReadOnlyBuffer() : byteBuffer.duplicate();
+    Objects.requireNonNull(byteBuffer, "ByteBuffer must not be null");
+    Objects.requireNonNull(byteOrder, "ByteOrder must not be null");
+    final ByteBuffer byteBuf;
+    if (localReadOnly) {
+      if (byteBuffer.isReadOnly()) {
+        byteBuf = byteBuffer.duplicate();
+      } else { //bb writable
+        byteBuf = byteBuffer.asReadOnlyBuffer();
+      }
+    } else { //want writable
+      if (byteBuffer.isReadOnly()) {
+        throw new IllegalArgumentException("ByteBuffer must be writable.");
+      }
+      byteBuf = byteBuffer.duplicate();
+    }
     byteBuf.clear(); //resets position to zero and limit to capacity. Does not clear data.
     final MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
     int type = BUFFER | BYTEBUF
@@ -100,7 +113,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   @Override
   public WritableBuffer writableRegion(final long offsetBytes, final long capacityBytes, final ByteOrder byteOrder) {
     if (this.isReadOnly()) {
-      throw new ReadOnlyException("Cannot create a writable region from a read-only Memory.");
+      throw new IllegalArgumentException("Cannot create a writable region from a read-only Memory.");
     }
     return regionImpl(offsetBytes, capacityBytes, false, byteOrder);
   }
@@ -134,7 +147,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
     return wbuf;
   }
 
-  //DUPLICATES
+  //DUPLICATES, DERIVED
   @Override
   public Buffer duplicate() {
     return duplicateImpl(true, getByteOrder());
@@ -148,7 +161,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   @Override
   public WritableBuffer writableDuplicate() {
     if (isReadOnly()) {
-      throw new ReadOnlyException("Cannot create a writable duplicate from a read-only Buffer.");
+      throw new IllegalArgumentException("Cannot create a writable duplicate from a read-only Buffer.");
     }
     return duplicateImpl(false, getByteOrder());
   }
@@ -156,7 +169,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   @Override
   public WritableBuffer writableDuplicate(final ByteOrder byteOrder) {
     if (isReadOnly()) {
-      throw new ReadOnlyException("Cannot create a writable duplicate from a read-only Buffer.");
+      throw new IllegalArgumentException("Cannot create a writable duplicate from a read-only Buffer.");
     }
     return duplicateImpl(false, byteOrder);
   }
@@ -193,7 +206,7 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
   @Override
   public WritableMemory asWritableMemory(final ByteOrder byteOrder) {
     if (isReadOnly()) {
-      throw new ReadOnlyException(
+      throw new IllegalArgumentException(
           "Cannot create a writable Memory from a read-only Buffer.");
     }
     return asWritableMemoryImpl(false, byteOrder);

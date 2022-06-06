@@ -21,7 +21,7 @@ package org.apache.datasketches.memory.internal;
 
 import static org.testng.Assert.assertEquals;
 
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
+import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableMemory;
@@ -33,6 +33,7 @@ import jdk.incubator.foreign.ResourceScope;
  * @author Lee Rhodes
  */
 public class CopyMemoryOverlapTest {
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   @Test
   public void checkOverlapUsingMemory() throws Exception {
@@ -67,7 +68,6 @@ public class CopyMemoryOverlapTest {
   }
 
   private static final void copyUsingDirectMemory(long copyLongs, double overlap, boolean copyUp) throws Exception {
-    final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
     println("Copy Using Direct Memory");
     long overlapLongs = (long) (overlap * copyLongs);
     long backingLongs = (2 * copyLongs) - overlapLongs;
@@ -108,7 +108,6 @@ public class CopyMemoryOverlapTest {
   }
 
   private static final void copyUsingDirectRegions(long copyLongs, double overlap, boolean copyUp) throws Exception {
-    final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
     println("Copy Using Direct Memory");
     long overlapLongs = (long) (overlap * copyLongs);
     long backingLongs = (2 * copyLongs) - overlapLongs;

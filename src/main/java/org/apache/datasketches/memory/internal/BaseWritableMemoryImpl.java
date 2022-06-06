@@ -28,13 +28,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.nio.file.InvalidPathException;
 import java.util.Objects;
 
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
-import org.apache.datasketches.memory.ReadOnlyException;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 
@@ -74,6 +72,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final MemorySegment seg,
       final ByteOrder byteOrder,
       final MemoryRequestServer memReqSvr) {
+    Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
     int type = MEMORY
         | (seg.isReadOnly() ? READONLY : 0);
     if (byteOrder == NON_NATIVE_BYTE_ORDER) {
@@ -89,40 +88,39 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final ByteBuffer byteBuffer,
       final boolean localReadOnly,
       final ByteOrder byteOrder) {
-    final ByteBuffer byteBuf = localReadOnly ? byteBuffer.asReadOnlyBuffer() : byteBuffer.duplicate();
+    Objects.requireNonNull(byteBuffer, "ByteBuffer must not be null");
+    Objects.requireNonNull(byteOrder, "ByteOrder must not be null");
+    final ByteBuffer byteBuf;
+    if (localReadOnly) {
+      if (byteBuffer.isReadOnly()) {
+        byteBuf = byteBuffer.duplicate();
+      } else { //bb writable
+        byteBuf = byteBuffer.asReadOnlyBuffer();
+      }
+    } else { //want writable
+      if (byteBuffer.isReadOnly()) {
+        throw new IllegalArgumentException("ByteBuffer must be writable.");
+      }
+      byteBuf = byteBuffer.duplicate();
+    }
     byteBuf.clear(); //resets position to zero and limit to capacity. Does not clear data.
     final MemorySegment seg = MemorySegment.ofByteBuffer(byteBuf); //from 0 to capacity
     int type = MEMORY | BYTEBUF
         | (localReadOnly ? READONLY : 0)
         | (seg.isNative() ? DIRECT : 0)
         | (seg.isMapped() ? MAP : 0);
+    final WritableMemory wmem;
     if (byteOrder == NON_NATIVE_BYTE_ORDER) {
       type |= NONNATIVE;
-      return new NonNativeWritableMemoryImpl(seg, type, null);
+      wmem = new NonNativeWritableMemoryImpl(seg, type, null);
+    } else {
+      wmem = new NativeWritableMemoryImpl(seg, type, null);
     }
-    return new NativeWritableMemoryImpl(seg, type, null);
+    return wmem;
   }
 
-  //MAP RESOURCE
+  //MAP FILE RESOURCE
 
-  /**
-   * Maps the specified portion of the given file into Memory for write operations.
-   * This chooses the correct Map leaf node based on the byte order.
-   * @param file the file being wrapped. It must be non-null with length &gt; 0.
-   * @param fileOffsetBytes the position in the given file in bytes. It must not be negative.
-   * @param capacityBytes the size of the mapped Memory. It must be &ge; 0.
-   * @param scope the given ResourceScope. It must be non-null.
-   * @param localReadOnly the requested read-only state
-   * @param byteOrder the byte order to be used.  It must be non-null.
-   * @return mapped WritableMemory.
-   * @throws InvalidPathException for invalid path
-   * @throws IllegalStateException - if scope has been already closed, or if access occurs from a thread other
-   * than the thread owning scope.
-   * @throws UnsupportedOperationException - if an unsupported map mode is specified.
-   * @throws IOException - if the specified path does not point to an existing file, or if some other I/O error occurs.
-   * @throws SecurityException - If a security manager is installed and it denies an unspecified permission
-   * required by the implementation.
-   */
   @SuppressWarnings("resource")
   public static WritableMemory wrapMap(
       final File file,
@@ -131,19 +129,15 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final ResourceScope scope,
       final boolean localReadOnly,
       final ByteOrder byteOrder)
-          throws InvalidPathException, IllegalStateException, UnsupportedOperationException, IOException,
-          SecurityException {
+          throws IllegalArgumentException, IllegalStateException, IOException, SecurityException {
+    Objects.requireNonNull(file, "File must be non-null.");
+    Objects.requireNonNull(byteOrder, "ByteOrder must be non-null.");
+    Objects.requireNonNull(scope, "ResourceScope must be non-null.");
+    if (!file.canRead()) { throw new IllegalArgumentException("File must be readable."); }
+    if (!localReadOnly && !file.canWrite()) { throw new IllegalArgumentException("File must be writable."); }
     final FileChannel.MapMode mapMode = (localReadOnly) ? READ_ONLY : READ_WRITE;
-    final MemorySegment seg;
-    try {
-      seg = MemorySegment.mapFile(
-          file.toPath(),
-          fileOffsetBytes,
-          capacityBytes,
-          mapMode,
-          scope); }
-    catch (final IllegalArgumentException | IllegalStateException | UnsupportedOperationException
-        | IOException | SecurityException e) { throw e; }
+
+    final MemorySegment seg = MemorySegment.mapFile(file.toPath(), fileOffsetBytes, capacityBytes, mapMode, scope);
     final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final int type = MEMORY | MAP | DIRECT
         | (localReadOnly ? READONLY : 0)
@@ -173,6 +167,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final ResourceScope scope,
       final ByteOrder byteOrder,
       final MemoryRequestServer memReqSvr) {
+    Objects.requireNonNull(scope, "ResourceScope must be non-null");
+    Objects.requireNonNull(byteOrder, "ByteOrder must be non-null");
     final MemorySegment seg = MemorySegment.allocateNative(
         capacityBytes,
         alignmentBytes,
@@ -195,7 +191,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   @Override
   public WritableMemory writableRegion(final long offsetBytes, final long capacityBytes, final ByteOrder byteOrder) {
     if (this.isReadOnly()) {
-      throw new ReadOnlyException("Cannot create a writable region from a read-only Memory.");
+      throw new IllegalArgumentException("Cannot create a writable region from a read-only Memory.");
     }
     return regionImpl(offsetBytes, capacityBytes, false, byteOrder);
   }
@@ -238,7 +234,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   @Override
   public WritableBuffer asWritableBuffer(final ByteOrder byteOrder) {
     if (isReadOnly()) {
-      throw new ReadOnlyException(
+      throw new IllegalArgumentException(
           "Cannot create a writable buffer from a read-only Memory.");
     }
     return asWritableBufferImpl(false, byteOrder);

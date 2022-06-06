@@ -23,7 +23,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.datasketches.memory.MurmurHash3.*;
 import static org.testng.Assert.fail;
 
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
+import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableMemory;
@@ -40,7 +40,7 @@ import jdk.incubator.foreign.ResourceScope;
  * @author Lee Rhodes
  */
 public class MurmurHash3v3Test {
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   @Test
   public void checkByteArrRemainderGT8() { //byte[], remainder > 8

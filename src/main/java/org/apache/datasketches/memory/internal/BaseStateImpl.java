@@ -41,40 +41,40 @@ import jdk.incubator.foreign.ResourceScope;
  * @author Lee Rhodes
  */
 @SuppressWarnings("restriction")
-public abstract class BaseStateImpl implements BaseState {
-  public static final String JDK; //must be at least "1.8"
-  public static final int JDK_MAJOR; //8, 11, 12, etc
+abstract class BaseStateImpl implements BaseState {
+  static final String JDK; //must be at least "1.8"
+  static final int JDK_MAJOR; //8, 11, 12, etc
 
-  public static final int BOOLEAN_SHIFT    = 0;
-  public static final int BYTE_SHIFT       = 0;
-  public static final long SHORT_SHIFT     = 1;
-  public static final long CHAR_SHIFT      = 1;
-  public static final long INT_SHIFT       = 2;
-  public static final long LONG_SHIFT      = 3;
-  public static final long FLOAT_SHIFT     = 2;
-  public static final long DOUBLE_SHIFT    = 3;
+  static final int BOOLEAN_SHIFT    = 0;
+  static final int BYTE_SHIFT       = 0;
+  static final long SHORT_SHIFT     = 1;
+  static final long CHAR_SHIFT      = 1;
+  static final long INT_SHIFT       = 2;
+  static final long LONG_SHIFT      = 3;
+  static final long FLOAT_SHIFT     = 2;
+  static final long DOUBLE_SHIFT    = 3;
 
   //class type IDs.
   // 0000 0XXX
-  public static final int READONLY  = 1;
-  public static final int REGION    = 1 << 1;
-  public static final int DUPLICATE = 1 << 2; //for Buffer only
+  static final int READONLY  = 1;
+  static final int REGION    = 1 << 1;
+  static final int DUPLICATE = 1 << 2; //for Buffer only
 
   // 000X X000
-  public static final int HEAP   = 0;
-  public static final int DIRECT = 1 << 3;
-  public static final int MAP    = 1 << 4; //Map is always Direct also
+  static final int HEAP   = 0;
+  static final int DIRECT = 1 << 3;
+  static final int MAP    = 1 << 4; //Map is always Direct also
 
   // 00X0 0000
-  public static final int NATIVE    = 0;
-  public static final int NONNATIVE = 1 << 5;
+  static final int NATIVE    = 0;
+  static final int NONNATIVE = 1 << 5;
 
   // 0X00 0000
-  public static final int MEMORY = 0;
-  public  static final int BUFFER = 1 << 6;
+  static final int MEMORY = 0;
+   static final int BUFFER = 1 << 6;
 
   // X000 0000
-  public static final int BYTEBUF = 1 << 7;
+  static final int BYTEBUF = 1 << 7;
 
   static {
     final String jdkVer = System.getProperty("java.version");
@@ -88,7 +88,7 @@ public abstract class BaseStateImpl implements BaseState {
 
   MemoryRequestServer memReqSvr;
 
-  public BaseStateImpl(final MemorySegment seg, final int typeId, final MemoryRequestServer memReqSvr) {
+  BaseStateImpl(final MemorySegment seg, final int typeId, final MemoryRequestServer memReqSvr) {
     this.seg = seg;
     this.typeId = typeId;
     this.memReqSvr = memReqSvr;
@@ -103,7 +103,7 @@ public abstract class BaseStateImpl implements BaseState {
    * @param allocSize the allocated size.
    * @throws IllegalArgumentException for exceeding address bounds
    */
-  public static void checkBounds(final long reqOff, final long reqLen, final long allocSize) {
+  static void checkBounds(final long reqOff, final long reqLen, final long allocSize) {
     if ((reqOff | reqLen | (reqOff + reqLen) | (allocSize - (reqOff + reqLen))) < 0) {
       throw new IllegalArgumentException(
           "reqOffset: " + reqOff + ", reqLength: " + reqLen
@@ -111,7 +111,7 @@ public abstract class BaseStateImpl implements BaseState {
     }
   }
 
-  public static void checkJavaVersion(final String jdkVer, final int p0) {
+  static void checkJavaVersion(final String jdkVer, final int p0) {
     if ( p0 != 17 ) {
       throw new IllegalArgumentException(
           "Unsupported JDK Major Version, must be 17; " + jdkVer);
@@ -124,7 +124,7 @@ public abstract class BaseStateImpl implements BaseState {
    * @return first two number groups of the java version string.
    * @throws IllegalArgumentException for an improper Java version string.
    */
-  public static int[] parseJavaVersion(final String jdkVer) {
+  static int[] parseJavaVersion(final String jdkVer) {
     final int p0, p1;
     try {
       String[] parts = jdkVer.trim().split("\\.");//grab only number groups and "."
@@ -143,7 +143,7 @@ public abstract class BaseStateImpl implements BaseState {
    * @param typeId the given typeId
    * @return a human readable string.
    */
-  public static final String typeDecode(final int typeId) {
+  static final String typeDecode(final int typeId) {
     final StringBuilder sb = new StringBuilder();
     final int group1 = typeId & 0x7;
     switch (group1) {

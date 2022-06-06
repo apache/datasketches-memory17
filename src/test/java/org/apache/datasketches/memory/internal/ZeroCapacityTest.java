@@ -23,7 +23,7 @@ import static org.testng.Assert.assertEquals;
 
 import java.nio.ByteBuffer;
 
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
+import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableMemory;
@@ -36,7 +36,7 @@ import jdk.incubator.foreign.ResourceScope;
  * @author Lee Rhodes
  */
 public class ZeroCapacityTest {
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   @SuppressWarnings("resource")
   @Test

@@ -21,7 +21,6 @@ package org.apache.datasketches.memory;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Objects;
 
 import org.apache.datasketches.memory.internal.BaseWritableBufferImpl;
 
@@ -61,8 +60,6 @@ public interface Buffer extends BaseBuffer {
    * @return a new <i>Buffer</i> for read-only operations on the given ByteBuffer.
    */
   static Buffer wrap(ByteBuffer byteBuffer, ByteOrder byteOrder) {
-    Objects.requireNonNull(byteBuffer, "byteBuffer must not be null");
-    Objects.requireNonNull(byteOrder, "byteOrder must not be null");
     return BaseWritableBufferImpl.wrapByteBuffer(byteBuffer, true, byteOrder);
   }
 

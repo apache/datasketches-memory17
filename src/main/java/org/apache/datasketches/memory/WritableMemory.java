@@ -23,8 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.file.InvalidPathException;
-import java.util.Objects;
 
 import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
 
@@ -61,14 +59,10 @@ public interface WritableMemory extends Memory {
    * @param byteBuffer the given <i>ByteBuffer</i>. It must be non-null and writable.
    * @param byteOrder the byte order to be used. It must be non-null.
    * @return a new <i>WritableMemory</i> for write operations on the given <i>ByteBuffer</i>.
-   * @throws ReadOnlyException if ByteBuffer is not writable.
+   * @throws IllegalArgumentException if ByteBuffer is not writable.
    */
   static WritableMemory writableWrap(ByteBuffer byteBuffer, ByteOrder byteOrder) {
-    Objects.requireNonNull(byteBuffer, "ByteBuffer must not be null");
-    Objects.requireNonNull(byteOrder, "ByteOrder must not be null");
-    if (byteBuffer.isReadOnly()) { throw new ReadOnlyException("ByteBuffer must be writable."); }
-    final ByteBuffer byteBuf = byteBuffer.position(0).limit(byteBuffer.capacity());
-    return BaseWritableMemoryImpl.wrapByteBuffer(byteBuf, false, byteOrder);
+    return BaseWritableMemoryImpl.wrapByteBuffer(byteBuffer, false, byteOrder);
   }
 
   //Duplicates make no sense here
@@ -82,18 +76,16 @@ public interface WritableMemory extends Memory {
    * @param file the given file to map. It must be non-null with a non-negative length and writable.
    * @param scope the give Resource Scope. It must be non-null.
    * @return mapped WritableMemory
-   * @throws ReadOnlyException -- if file is not writable.
-   * @throws InvalidPathException for invalid path
+   * @throws IllegalArgumentException -- if file is not readable.
+   * @throws IllegalArgumentException -- if file is not writable.
    * @throws IllegalStateException - if scope has been already closed, or if access occurs from a thread other
    * than the thread owning scope.
-   * @throws UnsupportedOperationException - if an unsupported map mode is specified.
    * @throws IOException - if the specified path does not point to an existing file, or if some other I/O error occurs.
    * @throws SecurityException - If a security manager is installed and it denies an unspecified permission
    * required by the implementation.
    */
   static WritableMemory writableMap(File file, ResourceScope scope)
-      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
-      IOException, SecurityException {
+      throws IllegalArgumentException, IllegalStateException, IOException, SecurityException {
     return writableMap(file, 0, file.length(), scope, ByteOrder.nativeOrder());
   }
 
@@ -105,24 +97,16 @@ public interface WritableMemory extends Memory {
    * @param scope the give Resource Scope. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return mapped WritableMemory.
-   * @throws ReadOnlyException -- if file is not writable.
-   * @throws InvalidPathException for invalid path
+   * @throws IllegalArgumentException -- if file is not readable or writable.
+   * @throws IllegalArgumentException -- if file is not writable.
    * @throws IllegalStateException - if scope has been already closed, or if access occurs from a thread other
    * than the thread owning scope.
-   * @throws UnsupportedOperationException - if an unsupported map mode is specified.
    * @throws IOException - if the specified path does not point to an existing file, or if some other I/O error occurs.
    * @throws SecurityException - If a security manager is installed and it denies an unspecified permission
    * required by the implementation.
    */
-  @SuppressWarnings("resource")
   static WritableMemory writableMap(File file, long fileOffsetBytes, long capacityBytes, ResourceScope scope,
-      ByteOrder byteOrder)
-          throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
-          IOException, SecurityException {
-    Objects.requireNonNull(file, "File must be non-null.");
-    Objects.requireNonNull(byteOrder, "ByteOrder must be non-null.");
-    Objects.requireNonNull(scope, "ResourceScope must be non-null.");
-    if (!file.canWrite()) { throw new ReadOnlyException("file must be writable."); }
+      ByteOrder byteOrder) throws IllegalArgumentException, IllegalStateException, IOException, SecurityException {
     return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, scope, false, byteOrder);
   }
 
@@ -167,8 +151,6 @@ public interface WritableMemory extends Memory {
       ResourceScope scope,
       ByteOrder byteOrder,
       MemoryRequestServer memReqSvr) {
-    Objects.requireNonNull(scope, "ResourceScope must be non-null");
-    Objects.requireNonNull(byteOrder, "ByteOrder must be non-null");
     return BaseWritableMemoryImpl.wrapDirect(capacityBytes, alignmentBytes, scope, byteOrder, memReqSvr);
   }
 
@@ -331,8 +313,6 @@ public interface WritableMemory extends Memory {
    */
   static WritableMemory writableWrap(byte[] array, int offsetBytes, int lengthBytes, ByteOrder byteOrder,
       MemoryRequestServer memReqSvr) {
-    Objects.requireNonNull(array, "array must be non-null");
-    Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
     final MemorySegment slice = MemorySegment.ofArray(array).asSlice(offsetBytes, lengthBytes);
     return BaseWritableMemoryImpl.wrapSegmentAsArray(slice, byteOrder, memReqSvr);
   }
@@ -343,7 +323,6 @@ public interface WritableMemory extends Memory {
    * @return a new WritableMemory for write operations on the given primitive array.
    */
   static WritableMemory writableWrap(char[] array) {
-    Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
     return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
@@ -354,7 +333,6 @@ public interface WritableMemory extends Memory {
    * @return a new WritableMemory for write operations on the given primitive array.
    */
   static WritableMemory writableWrap(short[] array) {
-    Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
     return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
@@ -365,7 +343,6 @@ public interface WritableMemory extends Memory {
    * @return a new WritableMemory for write operations on the given primitive array.
    */
   static WritableMemory writableWrap(int[] array) {
-    Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
     return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
@@ -376,7 +353,6 @@ public interface WritableMemory extends Memory {
    * @return a new WritableMemory for write operations on the given primitive array.
    */
   static WritableMemory writableWrap(long[] array) {
-    Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
     return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
@@ -387,7 +363,6 @@ public interface WritableMemory extends Memory {
    * @return a new WritableMemory for write operations on the given primitive array.
    */
   static WritableMemory writableWrap(float[] array) {
-    Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
     return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }
@@ -398,7 +373,6 @@ public interface WritableMemory extends Memory {
    * @return a new WritableMemory for write operations on the given primitive array.
    */
   static WritableMemory writableWrap(double[] array) {
-    Objects.requireNonNull(array, "array must be non-null");
     final MemorySegment seg = MemorySegment.ofArray(array);
     return BaseWritableMemoryImpl.wrapSegmentAsArray(seg, ByteOrder.nativeOrder(), null);
   }

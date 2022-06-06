@@ -42,6 +42,7 @@ public interface BaseState {
   static final ByteOrder NON_NATIVE_BYTE_ORDER =
       ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
       ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+  static final MemoryRequestServer defaultMemReqSvr = new DefaultMemoryRequestServer();
 
   /**
    * Returns a ByteBuffer view of this Memory object with the given ByteOrder.

@@ -27,7 +27,6 @@ import java.util.List;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
 import org.apache.datasketches.memory.WritableBuffer;
@@ -38,8 +37,7 @@ import org.testng.collections.Lists;
 import jdk.incubator.foreign.ResourceScope;
 
 public class BufferTest {
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
-
+  private final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
   @Test
   public void checkDirectRoundTrip() throws Exception {
     int n = 1024; //longs

@@ -38,10 +38,8 @@ import java.nio.ByteOrder;
 import java.nio.file.InvalidPathException;
 
 import org.apache.datasketches.memory.BaseState;
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
-import org.apache.datasketches.memory.ReadOnlyException;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -50,7 +48,7 @@ import jdk.incubator.foreign.ResourceScope;
 
 public class AllocateDirectWritableMapMemoryTest {
   private static final String LS = System.getProperty("line.separator");
-  private static final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   @BeforeClass
   public void setReadOnly() throws IOException {
@@ -59,7 +57,7 @@ public class AllocateDirectWritableMapMemoryTest {
 
   @Test
   public void simpleMap()
-      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
       IOException, SecurityException {
     File file = getResourceFile("GettysburgAddress.txt");
     Memory mem = null;
@@ -75,7 +73,7 @@ public class AllocateDirectWritableMapMemoryTest {
 
   @Test
   public void copyOffHeapToMemoryMappedFile()
-      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
       IOException, SecurityException {
     long numBytes = 1L << 10; //small for unit tests.  Make it larger than 2GB if you like.
     long numLongs = numBytes >>> 3;
@@ -110,7 +108,7 @@ public class AllocateDirectWritableMapMemoryTest {
 
   @Test
   public void checkNonNativeFile()
-      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
       IOException, SecurityException {
     File file = new File("TestFile2.bin");
     if (file.exists()) {
@@ -133,7 +131,7 @@ public class AllocateDirectWritableMapMemoryTest {
   @SuppressWarnings("resource")
   @Test
   public void testMapExceptionNoTWR()
-      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
       IOException, SecurityException {
     File dummy = createFile("dummy.txt", ""); //zero length
     ResourceScope scope = ResourceScope.newConfinedScope();
@@ -141,9 +139,9 @@ public class AllocateDirectWritableMapMemoryTest {
     scope.close();
   }
 
-  @Test(expectedExceptions = ReadOnlyException.class)
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void simpleMap2()
-      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
       IOException, SecurityException {
     File file = getResourceFile("GettysburgAddress.txt");
     assertTrue(file.canRead());
@@ -155,9 +153,9 @@ public class AllocateDirectWritableMapMemoryTest {
     }
   }
 
-  @Test(expectedExceptions = ReadOnlyException.class)
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void checkReadException()
-      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
       IOException, SecurityException {
     File file = getResourceFile("GettysburgAddress.txt");
     WritableMemory wmem = null;
@@ -170,7 +168,7 @@ public class AllocateDirectWritableMapMemoryTest {
 
   @Test
   public void testForce()
-      throws ReadOnlyException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
+      throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
       IOException, SecurityException {
     String origStr = "Corectng spellng mistks";
     File origFile = createFile("force_original.txt", origStr); //23

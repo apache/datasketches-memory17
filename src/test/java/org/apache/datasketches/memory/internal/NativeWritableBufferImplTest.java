@@ -29,10 +29,8 @@ import java.nio.ByteOrder;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
-import org.apache.datasketches.memory.DefaultMemoryRequestServer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
-import org.apache.datasketches.memory.ReadOnlyException;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.Assert;
@@ -41,7 +39,7 @@ import org.testng.annotations.Test;
 import jdk.incubator.foreign.ResourceScope;
 
 public class NativeWritableBufferImplTest {
-  private final MemoryRequestServer memReqSvr = new DefaultMemoryRequestServer();
+  private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
   //Simple Native direct
 
@@ -263,7 +261,7 @@ public class NativeWritableBufferImplTest {
     //println(mem.toHexString("HeapBB", 0, memCapacity));
   }
 
-  @Test(expectedExceptions = ReadOnlyException.class)
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void checkWrapWithBBReadonly2() {
     int memCapacity = 64;
     ByteBuffer byteBuf = ByteBuffer.allocate(memCapacity);
@@ -296,7 +294,7 @@ public class NativeWritableBufferImplTest {
     //println(mem.toHexString("HeapBB", 0, memCapacity));
   }
 
-  @Test(expectedExceptions = ReadOnlyException.class)
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void checkWrapWithDirectBBReadonlyPut() {
     int memCapacity = 64;
     ByteBuffer byteBuf = ByteBuffer.allocateDirect(memCapacity);
@@ -479,7 +477,7 @@ public class NativeWritableBufferImplTest {
       wbuf = (WritableBuffer) buf;
       wmem = wbuf.asWritableMemory();
       Assert.fail();
-    } catch (ReadOnlyException expected) {
+    } catch (IllegalArgumentException expected) {
       // expected
     }
   }
@@ -497,7 +495,7 @@ public class NativeWritableBufferImplTest {
       @SuppressWarnings("unused")
       WritableBuffer wdup2 = wbuf.writableDuplicate();
       Assert.fail();
-    } catch (ReadOnlyException expected) {
+    } catch (IllegalArgumentException expected) {
       // ignore
     }
   }
@@ -515,7 +513,7 @@ public class NativeWritableBufferImplTest {
       @SuppressWarnings("unused")
       WritableBuffer wreg2 = wbuf.writableRegion();
       Assert.fail();
-    } catch (ReadOnlyException expected) {
+    } catch (IllegalArgumentException expected) {
       // ignore
     }
   }
@@ -533,7 +531,7 @@ public class NativeWritableBufferImplTest {
       @SuppressWarnings("unused")
       WritableBuffer wreg2 = wbuf.writableRegion(0, 1, wbuf.getByteOrder());
       Assert.fail();
-    } catch (ReadOnlyException expected) {
+    } catch (IllegalArgumentException expected) {
       // ignore
     }
   }
