@@ -138,7 +138,7 @@ public interface Memory extends BaseState {
    * offsetBytes and capacityBytes.
    */
   default Memory region(long offsetBytes, long capacityBytes) {
-    return region(offsetBytes, capacityBytes, getTypeByteOrder());
+    return region(offsetBytes, capacityBytes, getByteOrder());
   }
 
   /**
@@ -170,7 +170,7 @@ public interface Memory extends BaseState {
    * @return a new <i>Buffer</i>
    */
   default Buffer asBuffer() {
-    return asBuffer(getTypeByteOrder());
+    return asBuffer(getByteOrder());
   }
 
   /**

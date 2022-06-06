@@ -49,25 +49,10 @@ final class NativeWritableBufferImpl extends BaseWritableBufferImpl {
   //Pass-through ctor
   NativeWritableBufferImpl(
       final MemorySegment seg,
-      final int typeId) {
-    super(seg, typeId);
-  }
-
-  static NativeWritableBufferImpl memoryExtendable(
-      final MemorySegment seg,
       final int typeId,
       final MemoryRequestServer memReqSvr) {
-    final NativeWritableBufferImpl impl = new NativeWritableBufferImpl(seg, typeId);
-    if (memReqSvr != null) { impl.setMemoryRequestServer(memReqSvr); }
-    return impl;
+    super(seg, typeId, memReqSvr);
   }
-
-  static NativeWritableBufferImpl notMemoryExtendable(
-      final MemorySegment seg,
-      final int typeId) {
-    return new NativeWritableBufferImpl(seg, typeId);
-  }
-
 
   //PRIMITIVE getX() and getXArray()
   @Override

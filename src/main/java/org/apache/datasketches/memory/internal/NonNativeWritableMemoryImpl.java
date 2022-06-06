@@ -48,23 +48,9 @@ final class NonNativeWritableMemoryImpl extends BaseWritableMemoryImpl {
   //Pass-through ctor
   NonNativeWritableMemoryImpl(
       final MemorySegment seg,
-      final int typeId) {
-    super(seg, typeId);
-  }
-
-  static NonNativeWritableMemoryImpl memoryExtendable(
-      final MemorySegment seg,
       final int typeId,
       final MemoryRequestServer memReqSvr) {
-    final NonNativeWritableMemoryImpl impl = new NonNativeWritableMemoryImpl(seg, typeId);
-    if (memReqSvr != null) { impl.setMemoryRequestServer(memReqSvr); }
-    return impl;
-  }
-
-  static NonNativeWritableMemoryImpl notMemoryExtendable(
-      final MemorySegment seg,
-      final int typeId) {
-    return new NonNativeWritableMemoryImpl(seg, typeId);
+    super(seg, typeId, memReqSvr);
   }
 
   ///PRIMITIVE getX() and getXArray()

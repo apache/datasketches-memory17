@@ -20,6 +20,7 @@
 package org.apache.datasketches.memory.internal;
 
 import org.apache.datasketches.memory.BaseBuffer;
+import org.apache.datasketches.memory.MemoryRequestServer;
 
 import jdk.incubator.foreign.MemorySegment;
 
@@ -49,8 +50,9 @@ public abstract class BaseBufferImpl extends BaseStateImpl implements BaseBuffer
   //Pass-through ctor
   BaseBufferImpl(
       final MemorySegment seg,
-      final int typeId) {
-    super(seg, typeId);
+      final int typeId,
+      final MemoryRequestServer memReqSvr) {
+    super(seg, typeId, memReqSvr);
     capacity = end = seg.byteSize();
   }
 

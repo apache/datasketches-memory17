@@ -104,7 +104,7 @@ public class ExampleMemoryRequestServerTest {
     @SuppressWarnings("resource")
     @Override
     public WritableMemory request(WritableMemory currentWMem, long newCapacityBytes) {
-     ByteOrder order = currentWMem.getTypeByteOrder();
+     ByteOrder order = currentWMem.getByteOrder();
      WritableMemory wmem;
      if (offHeap) {
        wmem = WritableMemory.allocateDirect(newCapacityBytes, 8, ResourceScope.newConfinedScope(), order, this);

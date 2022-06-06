@@ -63,8 +63,9 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   //Pass-through constructor
   BaseWritableMemoryImpl(
       final MemorySegment seg,
-      final int typeId) {
-    super(seg, typeId);
+      final int typeId,
+      final MemoryRequestServer memReqSvr) {
+    super(seg, typeId, memReqSvr);
   }
 
   //WRAP HEAP ARRAY RESOURCE
@@ -77,9 +78,9 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         | (seg.isReadOnly() ? READONLY : 0);
     if (byteOrder == NON_NATIVE_BYTE_ORDER) {
       type |= NONNATIVE;
-      return NonNativeWritableMemoryImpl.memoryExtendable(seg, type, memReqSvr);
+      return new NonNativeWritableMemoryImpl(seg, type, memReqSvr);
     }
-    return NativeWritableMemoryImpl.memoryExtendable(seg, type, memReqSvr);
+    return new NativeWritableMemoryImpl(seg, type, memReqSvr);
   }
 
   //BYTE BUFFER RESOURCE
@@ -97,9 +98,9 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         | (seg.isMapped() ? MAP : 0);
     if (byteOrder == NON_NATIVE_BYTE_ORDER) {
       type |= NONNATIVE;
-      return NonNativeWritableMemoryImpl.notMemoryExtendable(seg, type);
+      return new NonNativeWritableMemoryImpl(seg, type, null);
     }
-    return NativeWritableMemoryImpl.notMemoryExtendable(seg, type);
+    return new NativeWritableMemoryImpl(seg, type, null);
   }
 
   //MAP RESOURCE
@@ -148,8 +149,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         | (localReadOnly ? READONLY : 0)
         | (nativeBOType ? NATIVE : NONNATIVE);
     return nativeBOType
-        ? NativeWritableMemoryImpl.notMemoryExtendable(seg, type)
-        : NonNativeWritableMemoryImpl.notMemoryExtendable(seg, type);
+        ? new NativeWritableMemoryImpl(seg, type, null)
+        : new NonNativeWritableMemoryImpl(seg, type, null);
   }
 
   //DIRECT RESOURCE
@@ -180,8 +181,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     final int type = MEMORY | DIRECT
         | (nativeBOType ? NATIVE : NONNATIVE);
     return nativeBOType
-        ? NativeWritableMemoryImpl.memoryExtendable(seg, type, memReqSvr)
-        : NonNativeWritableMemoryImpl.memoryExtendable(seg, type, memReqSvr);
+        ? new NativeWritableMemoryImpl(seg, type, memReqSvr)
+        : new NonNativeWritableMemoryImpl(seg, type, memReqSvr);
   }
 
   //REGION DERIVED
@@ -210,11 +211,11 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     final MemorySegment slice = (readOnly && !seg.isReadOnly())
         ? seg.asSlice(offsetBytes, capacityBytes).asReadOnly()
         : seg.asSlice(offsetBytes, capacityBytes);
-    final boolean duplicateType = isDuplicateType();
+    final boolean duplicateType = isDuplicate();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
     final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
-    final boolean byteBufferType = isByteBufferType();
+    final boolean byteBufferType = hasByteBuffer();
     final int type = MEMORY | REGION
         | (readOnly ? READONLY : 0)
         | (duplicateType ? DUPLICATE : 0)
@@ -222,21 +223,9 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         | (directType ? DIRECT : 0)
         | (nativeBOType ? NATIVE : NONNATIVE)
         | (byteBufferType ? BYTEBUF : 0);
-    if (byteBufferType) {
-      if (nativeBOType) { return NativeWritableMemoryImpl.notMemoryExtendable(slice, type); }
-      return NonNativeWritableMemoryImpl.notMemoryExtendable(slice, type);
-    }
-    if (mapType) {
-      if (nativeBOType) { return NativeWritableMemoryImpl.notMemoryExtendable(slice, type); }
-      return NonNativeWritableMemoryImpl.notMemoryExtendable(slice, type);
-    }
-    if (directType) {
-      if (nativeBOType) { return NativeWritableMemoryImpl.memoryExtendable(slice, type, memReqSvr); }
-      return NonNativeWritableMemoryImpl.memoryExtendable(slice, type, memReqSvr);
-    }
-    //else heap type
-    if (nativeBOType) { return NativeWritableMemoryImpl.memoryExtendable(slice, type, memReqSvr); }
-    return NonNativeWritableMemoryImpl.memoryExtendable(slice, type, memReqSvr);
+
+    final WritableMemory wmem = selectMemory(slice, type, memReqSvr, byteBufferType, mapType, nativeBOType);
+    return wmem;
   }
 
   //AS BUFFER DERIVED
@@ -260,12 +249,12 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
     Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
     final boolean readOnly = isReadOnly() || localReadOnly;
     final MemorySegment seg2 = (readOnly && !seg.isReadOnly()) ? seg.asReadOnly() : seg;
-    final boolean regionType = isRegionType();
-    final boolean duplicateType = isDuplicateType();
+    final boolean regionType = isRegion();
+    final boolean duplicateType = isDuplicate();
     final boolean mapType = seg.isMapped();
     final boolean directType = seg.isNative();
     final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
-    final boolean byteBufferType = isByteBufferType();
+    final boolean byteBufferType = hasByteBuffer();
     final int type = BUFFER
         | (readOnly ? READONLY : 0)
         | (regionType ? REGION : 0)
@@ -274,23 +263,9 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
         | (mapType ? MAP : 0)
         | (nativeBOType ? NATIVE : NONNATIVE)
         | (byteBufferType ? BYTEBUF : 0);
-    WritableBuffer wbuf;
-    if (byteBufferType) {
-      if (nativeBOType) { wbuf = NativeWritableBufferImpl.notMemoryExtendable(seg2, type); }
-      else { wbuf = NonNativeWritableBufferImpl.notMemoryExtendable(seg2, type); }
-    }
-    if (mapType) {
-      if (nativeBOType) { wbuf = NativeWritableBufferImpl.notMemoryExtendable(seg2, type); }
-      else { wbuf = NonNativeWritableBufferImpl.notMemoryExtendable(seg2, type); }
-    }
-    if (directType) {
-      if (nativeBOType) { wbuf = NativeWritableBufferImpl.memoryExtendable(seg2, type, memReqSvr); }
-      else { wbuf = NonNativeWritableBufferImpl.memoryExtendable(seg2, type, memReqSvr); }
-    }
-    //else heap type
-    if (nativeBOType) { wbuf = NativeWritableBufferImpl.memoryExtendable(seg2, type, memReqSvr); }
-    else { wbuf = NonNativeWritableBufferImpl.memoryExtendable(seg2, type, memReqSvr); }
-    wbuf.setStartPositionEnd(0, 0, getCapacity());
+
+    final WritableBuffer wbuf = selectBuffer(seg2, type, memReqSvr, byteBufferType, mapType, nativeBOType);
+    wbuf.setStartPositionEnd(0, 0, wbuf.getCapacity());
     return wbuf;
   }
 

@@ -49,23 +49,9 @@ final class NonNativeWritableBufferImpl extends BaseWritableBufferImpl {
   //Pass-through ctor
   NonNativeWritableBufferImpl(
       final MemorySegment seg,
-      final int typeId) {
-    super(seg, typeId);
-  }
-
-  static NonNativeWritableBufferImpl memoryExtendable(
-      final MemorySegment seg,
       final int typeId,
       final MemoryRequestServer memReqSvr) {
-    final NonNativeWritableBufferImpl impl = new NonNativeWritableBufferImpl(seg, typeId);
-    if (memReqSvr != null) { impl.setMemoryRequestServer(memReqSvr); }
-    return impl;
-  }
-
-  static NonNativeWritableBufferImpl notMemoryExtendable(
-      final MemorySegment seg,
-      final int typeId) {
-    return new NonNativeWritableBufferImpl(seg, typeId);
+    super(seg, typeId, memReqSvr);
   }
 
   //PRIMITIVE getX() and getXArray()

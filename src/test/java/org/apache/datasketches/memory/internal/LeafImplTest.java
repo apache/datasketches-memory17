@@ -86,7 +86,7 @@ public class LeafImplTest {
     WritableMemory mem = WritableMemory.writableWrap(bb, NBO);
     assertEquals(bb.isDirect(), mem.isDirect());
 
-    checkCombinations(mem, off, cap, mem.isDirect(), mem.getTypeByteOrder(), true, false);
+    checkCombinations(mem, off, cap, mem.isDirect(), mem.getByteOrder(), true, false);
 
     //BB off heap, native order, has ByteBuffer, has MemReqSvr
     ByteBuffer dbb = ByteBuffer.allocateDirect((int)cap);
@@ -95,7 +95,7 @@ public class LeafImplTest {
     mem = WritableMemory.writableWrap(dbb, NBO);
     assertEquals(dbb.isDirect(), mem.isDirect());
 
-    checkCombinations(mem, off, cap,  mem.isDirect(), mem.getTypeByteOrder(), true, false);
+    checkCombinations(mem, off, cap,  mem.isDirect(), mem.getByteOrder(), true, false);
 
     //BB on heap, non native order, has ByteBuffer, has MemReqSvr
     bb = ByteBuffer.allocate((int)cap);
@@ -104,7 +104,7 @@ public class LeafImplTest {
     mem = WritableMemory.writableWrap(bb, NNBO);
     assertEquals(bb.isDirect(), mem.isDirect());
 
-    checkCombinations(mem, off, cap, mem.isDirect(), mem.getTypeByteOrder(), true, false);
+    checkCombinations(mem, off, cap, mem.isDirect(), mem.getByteOrder(), true, false);
 
     //BB off heap, non native order, has ByteBuffer, has MemReqSvr
     dbb = ByteBuffer.allocateDirect((int)cap);
@@ -113,7 +113,7 @@ public class LeafImplTest {
     mem = WritableMemory.writableWrap(dbb, NNBO);
     assertEquals(dbb.isDirect(), mem.isDirect());
 
-    checkCombinations(mem, off, cap,  mem.isDirect(), mem.getTypeByteOrder(), true, false);
+    checkCombinations(mem, off, cap,  mem.isDirect(), mem.getByteOrder(), true, false);
   }
 
   @Test
@@ -170,7 +170,7 @@ public class LeafImplTest {
     assertEquals(mem.writableRegion(off, cap, oo).getShort(0), 256);
     assertEquals(mem.asWritableBuffer(bo).getShort(0), 1);
     assertEquals(mem.asWritableBuffer(oo).getShort(0), 256);
-    assertTrue(mem.getTypeByteOrder() == bo);
+    assertTrue(mem.getByteOrder() == bo);
 
     if (fromByteBuffer) { assertTrue(mem.hasByteBuffer()); }
     else { assertFalse(mem.hasByteBuffer()); }
@@ -194,7 +194,7 @@ public class LeafImplTest {
     assertEquals(buf.writableRegion(off, cap, oo).getShort(0), 256);
     assertEquals(buf.writableDuplicate(bo).getShort(0), 1);
     assertEquals(buf.writableDuplicate(oo).getShort(0), 256);
-    assertTrue(buf.getTypeByteOrder() == bo);
+    assertTrue(buf.getByteOrder() == bo);
 
     if (fromByteBuffer) { assertTrue(buf.hasByteBuffer()); }
 
@@ -218,7 +218,7 @@ public class LeafImplTest {
     assertEquals(nnMem.asWritableBuffer(bo).getShort(0), 1);
     assertEquals(nnMem.asWritableBuffer(oo).getShort(0), 256);
 
-    assertTrue(nnMem.getTypeByteOrder() == oo);
+    assertTrue(nnMem.getByteOrder() == oo);
 
     if (fromByteBuffer) { assertTrue(nnMem.hasByteBuffer()); }
 
@@ -242,7 +242,7 @@ public class LeafImplTest {
     assertEquals(nnBuf.writableDuplicate(bo).getShort(0), 1);
     assertEquals(nnBuf.writableDuplicate(oo).getShort(0), 256);
 
-    assertTrue(nnBuf.getTypeByteOrder() == oo);
+    assertTrue(nnBuf.getByteOrder() == oo);
 
     if (fromByteBuffer) { assertTrue(nnBuf.hasByteBuffer()); }
 
