@@ -33,7 +33,6 @@ import jdk.incubator.foreign.ResourceScope;
 public class AllocateDirectMemoryTest {
   private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
 
-  @SuppressWarnings("resource")
   @Test
   public void simpleAllocateDirect() {
     int longs = 32;
@@ -77,7 +76,6 @@ public class AllocateDirectMemoryTest {
     } // So we let the TWR close it here
   }
 
-  @SuppressWarnings("resource")
   @Test
   public void checkNonNativeDirect() {
     WritableMemory wmem = null;
