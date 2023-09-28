@@ -32,10 +32,9 @@ import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * @author Lee Rhodes
@@ -74,7 +73,7 @@ public class SpecificLeafTest {
   @Test
   public void checkDirectLeafs() throws Exception {
     int bytes = 128;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(bytes, scope, memReqSvr);
       assertFalse(((BaseStateImpl)wmem).isReadOnly());
       assertTrue(wmem.isDirect());
@@ -112,7 +111,7 @@ public class SpecificLeafTest {
     file.deleteOnExit();  //comment out if you want to examine the file.
 
     final long bytes = 128;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.writableMap(file, 0L, bytes, scope, ByteOrder.nativeOrder());
       assertTrue(mem.isMapped());
       assertFalse(mem.isReadOnly());

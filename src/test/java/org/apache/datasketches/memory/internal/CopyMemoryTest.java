@@ -26,11 +26,10 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class CopyMemoryTest {
   private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
@@ -151,7 +150,7 @@ public class CopyMemoryTest {
 
   @SuppressWarnings("resource")
   private static WritableMemory genWmem(int longs, boolean empty) {
-    WritableMemory wmem = WritableMemory.allocateDirect(longs << 3, ResourceScope.newConfinedScope(), memReqSvr);
+    WritableMemory wmem = WritableMemory.allocateDirect(longs << 3, MemoryScope.newConfinedScope(), memReqSvr);
     if (empty) {
       wmem.clear();
     } else {

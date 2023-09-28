@@ -27,7 +27,7 @@ import org.apache.datasketches.memory.internal.MemoryScopeImpl;
 /**
  * A wrapper around jdk.incubator.foreign.ResourceScope
  */
-public abstract class MemoryScope {
+public abstract class MemoryScope implements AutoCloseable {
 
   /**
    * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.globalScope()</i>.
@@ -86,6 +86,7 @@ public abstract class MemoryScope {
   /**
    * Closes this the underlying <i>ResourceScope</i>.
    */
+  @Override
   public abstract void close();
 
   /**

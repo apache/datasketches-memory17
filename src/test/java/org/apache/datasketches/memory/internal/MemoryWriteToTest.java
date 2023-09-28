@@ -29,10 +29,9 @@ import java.util.concurrent.ThreadLocalRandom;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class MemoryWriteToTest {
   private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
@@ -59,7 +58,7 @@ public class MemoryWriteToTest {
 
   @Test
   public void testOffHeap() throws Exception {
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(((1 << 20) * 5) + 10, scope, memReqSvr);
       testWriteTo(mem.region(0, 0));
       testOffHeap(mem, 7);

@@ -40,11 +40,10 @@ import java.nio.file.InvalidPathException;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class AllocateDirectWritableMapMemoryTest {
   private static final String LS = System.getProperty("line.separator");
@@ -61,7 +60,7 @@ public class AllocateDirectWritableMapMemoryTest {
       IOException, SecurityException {
     File file = getResourceFile("GettysburgAddress.txt");
     Memory mem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       mem = Memory.map(file,scope);
       byte[] byteArr = new byte[(int)mem.getCapacity()];
       mem.getByteArray(0, byteArr, 0, byteArr.length);
@@ -88,7 +87,7 @@ public class AllocateDirectWritableMapMemoryTest {
     file.deleteOnExit();  //comment out if you want to examine the file.
 
     WritableMemory dstMem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) { //this scope manages two Memory objects
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) { //this scope manages two Memory objects
       dstMem = WritableMemory.writableMap(file, 0, numBytes, scope, ByteOrder.nativeOrder());
 
       WritableMemory srcMem
@@ -121,7 +120,7 @@ public class AllocateDirectWritableMapMemoryTest {
 
     final long bytes = 8;
     WritableMemory wmem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       wmem = WritableMemory.writableMap(file, 0L, bytes, scope, BaseState.NON_NATIVE_BYTE_ORDER);
       wmem.putChar(0, (char) 1);
       assertEquals(wmem.getByte(1), (byte) 1);
@@ -134,7 +133,7 @@ public class AllocateDirectWritableMapMemoryTest {
       throws IllegalArgumentException, InvalidPathException, IllegalStateException, UnsupportedOperationException,
       IOException, SecurityException {
     File dummy = createFile("dummy.txt", ""); //zero length
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     Memory.map(dummy, 0, dummy.length(), scope, ByteOrder.nativeOrder());
     scope.close();
   }
@@ -147,7 +146,7 @@ public class AllocateDirectWritableMapMemoryTest {
     assertTrue(file.canRead());
     assertFalse(file.canWrite());
     WritableMemory wmem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       wmem = WritableMemory.writableMap(file, scope); //throws ReadOnlyException
       wmem.getCapacity();
     }
@@ -159,7 +158,7 @@ public class AllocateDirectWritableMapMemoryTest {
       IOException, SecurityException {
     File file = getResourceFile("GettysburgAddress.txt");
     WritableMemory wmem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       wmem = WritableMemory.writableMap(file, 0, 1 << 20, scope, ByteOrder.nativeOrder());
       //throws ReadOnlyException
       wmem.getCapacity();
@@ -180,7 +179,7 @@ public class AllocateDirectWritableMapMemoryTest {
 
     Memory mem = null;
     WritableMemory wmem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       mem = Memory.map(origFile, 0, origBytes, scope, ByteOrder.nativeOrder());
       mem.load();
       assertTrue(mem.isLoaded());

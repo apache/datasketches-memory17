@@ -24,10 +24,9 @@ import static org.testng.Assert.assertEquals;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * @author Lee Rhodes
@@ -96,7 +95,7 @@ public class CopyMemoryOverlapTest {
     println("CopyUp       : " + copyUp);
     println("Backing longs: " + backingLongs + "\t bytes: " + backingBytes);
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory backingMem = WritableMemory.allocateDirect(backingBytes, scope, memReqSvr);
       fill(backingMem); //fill mem with 0 thru copyLongs -1
       //listMem(backingMem, "Original");
@@ -136,7 +135,7 @@ public class CopyMemoryOverlapTest {
     println("CopyUp       : " + copyUp);
     println("Backing longs: " + backingLongs + "\t bytes: " + backingBytes);
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory backingMem = WritableMemory.allocateDirect(backingBytes, scope, memReqSvr);
       fill(backingMem); //fill mem with 0 thru copyLongs -1
       //listMem(backingMem, "Original");

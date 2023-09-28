@@ -31,11 +31,10 @@ import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class NativeWritableMemoryImplTest {
   private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
@@ -46,7 +45,7 @@ public class NativeWritableMemoryImplTest {
   @Test
   public void checkNativeCapacityAndClose() throws Exception {
     int memCapacity = 64;
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
     assertEquals(memCapacity, wmem.getCapacity());
 
@@ -187,7 +186,7 @@ public class NativeWritableMemoryImplTest {
   @Test
   public void checkNativeBaseBound() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       wmem.toHexString("Force Assertion Error", memCapacity, 8, false);
     } catch (IllegalArgumentException e) {
@@ -198,7 +197,7 @@ public class NativeWritableMemoryImplTest {
   @Test
   public void checkNativeSrcArrayBound() throws Exception {
     long memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       byte[] srcArray = { 1, -2, 3, -4 };
       wmem.putByteArray(0L, srcArray, 0, 5);
@@ -219,7 +218,7 @@ public class NativeWritableMemoryImplTest {
   public void checkCopyWithinNativeSmall() throws Exception {
     int memCapacity = 64;
     int half = memCapacity/2;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       wmem.clear();
 
@@ -241,7 +240,7 @@ public class NativeWritableMemoryImplTest {
     int memCapLongs = memCapacity / 8;
     int halfBytes = memCapacity / 2;
     int halfLongs = memCapLongs / 2;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       wmem.clear();
 
@@ -260,7 +259,7 @@ public class NativeWritableMemoryImplTest {
   @Test
   public void checkCopyWithinNativeSrcBound() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       wmem.copyTo(32, wmem, 32, 33);  //hit source bound check
       fail("Did Not Catch Assertion Error: source bound");
@@ -273,7 +272,7 @@ public class NativeWritableMemoryImplTest {
   @Test
   public void checkCopyWithinNativeDstBound() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       wmem.copyTo(0, wmem, 32, 33);  //hit dst bound check
       fail("Did Not Catch Assertion Error: dst bound");
@@ -287,7 +286,7 @@ public class NativeWritableMemoryImplTest {
   public void checkCopyCrossNativeSmall() throws Exception {
     int memCapacity = 64;
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       WritableMemory wmem2 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
@@ -308,7 +307,7 @@ public class NativeWritableMemoryImplTest {
     int memCapacity = (2<<20) + 64;
     int memCapLongs = memCapacity / 8;
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       WritableMemory wmem2 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
@@ -328,7 +327,7 @@ public class NativeWritableMemoryImplTest {
   @Test
   public void checkCopyCrossNativeAndByteArray() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
       for (int i= 0; i < wmem.getCapacity(); i++) {
@@ -349,7 +348,7 @@ public class NativeWritableMemoryImplTest {
   public void checkCopyCrossRegionsSameNative() throws Exception {
     int memCapacity = 128;
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
       for (int i= 0; i < wmem1.getCapacity(); i++) {
@@ -375,7 +374,7 @@ public class NativeWritableMemoryImplTest {
   @Test
   public void checkCopyCrossNativeArrayAndHierarchicalRegions() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
       for (int i= 0; i < wmem1.getCapacity(); i++) { //fill with numbers
@@ -405,7 +404,7 @@ public class NativeWritableMemoryImplTest {
   @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void checkRegionBounds() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       wmem.writableRegion(1, 64);
     }
@@ -517,7 +516,7 @@ public class NativeWritableMemoryImplTest {
     int memCapacity = 64;
     WritableMemory mem = WritableMemory.allocate(memCapacity);
     assertFalse(mem.isDirect());
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       assertTrue(wmem.isDirect());
     }
@@ -578,7 +577,7 @@ public class NativeWritableMemoryImplTest {
     byte[] arr2 = new byte[] {0, 1, 2, 4};
     byte[] arr3 = new byte[] {0, 1, 2, 3, 4};
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem1 = WritableMemory.allocateDirect(4, scope, memReqSvr);
       WritableMemory mem2 = WritableMemory.allocateDirect(4, scope, memReqSvr);
       WritableMemory mem3 = WritableMemory.allocateDirect(5, scope, memReqSvr);

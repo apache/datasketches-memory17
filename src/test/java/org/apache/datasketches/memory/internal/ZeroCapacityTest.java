@@ -26,11 +26,10 @@ import java.nio.ByteBuffer;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * @author Lee Rhodes
@@ -49,7 +48,7 @@ public class ZeroCapacityTest {
     Memory mem3 = Memory.wrap(ByteBuffer.allocateDirect(0));
     mem3.region(0, 0);
     WritableMemory nullMem = null;
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     try { //Invalid allocation size : 0
       nullMem = WritableMemory.allocateDirect(0, scope, memReqSvr);
       Assert.fail();

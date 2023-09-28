@@ -26,12 +26,12 @@ import static org.testng.Assert.fail;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * Tests the MurmurHash3 against specific, known hash results given known
@@ -274,7 +274,7 @@ public class MurmurHash3v3Test {
       Memory mem = Memory.wrap(new byte[0]);
       out = hash(mem, 0L, 4L, 1L, out);
     } catch (final IllegalArgumentException e) { }
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       Memory mem = WritableMemory.allocateDirect(8, scope, memReqSvr);
       long[] out = new long[2];
       out = hash(mem, 0L, 4L, 1L, out);

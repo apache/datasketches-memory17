@@ -25,10 +25,9 @@ import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * @author Lee Rhodes
@@ -81,7 +80,7 @@ public class BaseBufferTest {
   public void checkCheckNotAliveAfterTWR() {
     WritableMemory wmem;
     Buffer buf;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       wmem = WritableMemory.allocateDirect(100, scope, memReqSvr);
       buf = wmem.asBuffer();
     }

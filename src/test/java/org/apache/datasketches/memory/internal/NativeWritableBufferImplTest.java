@@ -31,12 +31,11 @@ import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class NativeWritableBufferImplTest {
   private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
@@ -47,7 +46,7 @@ public class NativeWritableBufferImplTest {
   @Test
   public void checkNativeCapacityAndClose() throws Exception {
     int memCapacity = 64;
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
     WritableBuffer wbuf = wmem.asWritableBuffer();
     assertEquals(wbuf.getCapacity(), memCapacity);
@@ -188,7 +187,7 @@ public class NativeWritableBufferImplTest {
   @Test
   public void checkNativeBaseBound() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       WritableBuffer wbuf = wmem.asWritableBuffer();
       wbuf.toHexString("Force Assertion Error", memCapacity, 8, false);
@@ -200,7 +199,7 @@ public class NativeWritableBufferImplTest {
   @Test
   public void checkNativeSrcArrayBound() throws Exception {
     long memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       WritableBuffer wbuf = wmem.asWritableBuffer();
       byte[] srcArray = { 1, -2, 3, -4 };
@@ -213,7 +212,7 @@ public class NativeWritableBufferImplTest {
   @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void checkRegionBounds() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       WritableBuffer wbuf = wmem.asWritableBuffer();
       wbuf.writableRegion(1, 64, wbuf.getByteOrder()); //wrong!
@@ -329,7 +328,7 @@ public class NativeWritableBufferImplTest {
     int memCapacity = 64;
     WritableBuffer mem = WritableMemory.allocate(memCapacity).asWritableBuffer();
     assertFalse(mem.isDirect());
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     WritableMemory wmem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
     WritableBuffer wbuf = wmem.asWritableBuffer();
     assertTrue(wbuf.isDirect());
@@ -384,7 +383,7 @@ public class NativeWritableBufferImplTest {
     byte[] arr1 = new byte[] {0, 1, 2, 3};
     byte[] arr2 = new byte[] {0, 1, 2, 4};
     byte[] arr3 = new byte[] {0, 1, 2, 3, 4};
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem1 = WritableMemory.allocateDirect(4, scope, memReqSvr);
       WritableMemory mem2 = WritableMemory.allocateDirect(4, scope, memReqSvr);
       WritableMemory mem3 = WritableMemory.allocateDirect(5, scope, memReqSvr);

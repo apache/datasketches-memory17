@@ -29,19 +29,18 @@ import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
 import org.testng.collections.Lists;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class BufferTest {
   private final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
   @Test
   public void checkDirectRoundTrip() throws Exception {
     int n = 1024; //longs
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
     WritableMemory wmem = WritableMemory.allocateDirect(n * 8, scope, memReqSvr);
       WritableBuffer wbuf = wmem.asWritableBuffer();
       for (int i = 0; i < n; i++) {
@@ -285,7 +284,7 @@ public class BufferTest {
   @Test(expectedExceptions = IllegalStateException.class)
   public void checkParentUseAfterFree() throws Exception {
     int bytes = 64 * 8;
-    WritableMemory wmem = WritableMemory.allocateDirect(bytes, ResourceScope.newConfinedScope(), memReqSvr);
+    WritableMemory wmem = WritableMemory.allocateDirect(bytes, MemoryScope.newConfinedScope(), memReqSvr);
     WritableBuffer wbuf = wmem.asWritableBuffer();
     wbuf.close();
     //with -ea assert: Memory not valid.
@@ -297,7 +296,7 @@ public class BufferTest {
   @Test(expectedExceptions = IllegalStateException.class)
   public void checkRegionUseAfterFree() throws Exception {
     int bytes = 64;
-    WritableMemory wmem = WritableMemory.allocateDirect(bytes, ResourceScope.newConfinedScope(), memReqSvr);
+    WritableMemory wmem = WritableMemory.allocateDirect(bytes, MemoryScope.newConfinedScope(), memReqSvr);
     Buffer region = wmem.asBuffer().region();
     region.close();
     //with -ea assert: Memory not valid.

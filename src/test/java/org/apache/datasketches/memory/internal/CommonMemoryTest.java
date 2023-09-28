@@ -29,17 +29,16 @@ import static org.testng.Assert.assertTrue;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class CommonMemoryTest {
   private final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
   @Test
   public void checkSetGet() throws Exception {
     int memCapacity = 16; //must be at least 8
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       assertEquals(mem.getCapacity(), memCapacity);
       setGetTests(mem);
@@ -91,7 +90,7 @@ public class CommonMemoryTest {
   @Test
   public void checkSetGetArrays() throws Exception {
     int memCapacity = 32;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       assertEquals(memCapacity, mem.getCapacity());
       setGetArraysTests(mem);
@@ -161,7 +160,7 @@ public class CommonMemoryTest {
   @Test
   public void checkSetGetPartialArraysWithOffset() throws Exception {
     int memCapacity = 32;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       assertEquals(memCapacity, mem.getCapacity());
       setGetPartialArraysWithOffsetTests(mem);
@@ -231,7 +230,7 @@ public class CommonMemoryTest {
   @Test
   public void checkSetClearIsBits() throws Exception {
     int memCapacity = 8;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       assertEquals(memCapacity, mem.getCapacity());
       mem.clear();
@@ -272,7 +271,7 @@ public class CommonMemoryTest {
   @Test
   public void checkSetClearMemoryRegions() throws Exception {
     int memCapacity = 64; //must be 64
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
       setClearMemoryRegionsTests(mem); //requires println enabled to visually check
@@ -343,7 +342,7 @@ public class CommonMemoryTest {
   @Test
   public void checkToHexStringAllMem() throws Exception {
     int memCapacity = 48; //must be 48
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       toHexStringAllMemTests(mem); //requires println enabled to visually check
     }

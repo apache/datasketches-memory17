@@ -22,10 +22,9 @@ package org.apache.datasketches.memory.internal;
 import java.nio.ByteOrder;
 
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * Examples of how to use the MemoryRequestServer with a memory hungry client.
@@ -44,7 +43,7 @@ public class ExampleMemoryRequestServerTest {
     int bytes = 8;
     ExampleMemoryRequestServer svr = new ExampleMemoryRequestServer(true);
     WritableMemory memStart = null;
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     memStart = WritableMemory.allocateDirect(bytes, 8, scope, ByteOrder.nativeOrder(), svr);
     MemoryClient client = new MemoryClient(memStart);
     client.process();
@@ -107,7 +106,7 @@ public class ExampleMemoryRequestServerTest {
      ByteOrder order = currentWMem.getByteOrder();
      WritableMemory wmem;
      if (offHeap) {
-       wmem = WritableMemory.allocateDirect(newCapacityBytes, 8, ResourceScope.newConfinedScope(), order, this);
+       wmem = WritableMemory.allocateDirect(newCapacityBytes, 8, MemoryScope.newConfinedScope(), order, this);
      } else {
        if (newCapacityBytes > Integer.MAX_VALUE) {
          throw new IllegalArgumentException("Requested capacity exceeds Integer.MAX_VALUE.");

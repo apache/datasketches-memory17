@@ -23,12 +23,11 @@ import java.nio.ByteOrder;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class IgnoredArrayOverflowTest {
   private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
@@ -39,7 +38,7 @@ public class IgnoredArrayOverflowTest {
   @SuppressWarnings("resource")
   @BeforeClass
   public void allocate() {
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     memory = WritableMemory.allocateDirect(MAX_SIZE, 8L, scope, ByteOrder.nativeOrder(), memReqSvr);
   }
 

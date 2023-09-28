@@ -27,11 +27,10 @@ import java.nio.ByteBuffer;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * @author Lee Rhodes
@@ -165,7 +164,7 @@ public class BufferInvariantsTest {
 
   @Test
   public void checkLimitsDirect() throws Exception {
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem = WritableMemory.allocateDirect(100, scope, memReqSvr);
       Buffer buf = wmem.asBuffer();
       buf.setStartPositionEnd(40, 45, 50);
@@ -236,7 +235,7 @@ public class BufferInvariantsTest {
   @Test
   public void testBufDirect() throws Exception {
     int n = 25;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
     WritableMemory wmem = WritableMemory.allocateDirect(n, scope, memReqSvr);
     WritableBuffer buf = wmem.asWritableBuffer();
     for (byte i = 0; i < n; i++) { buf.putByte(i); }

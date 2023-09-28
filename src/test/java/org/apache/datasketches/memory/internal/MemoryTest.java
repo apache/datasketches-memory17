@@ -37,13 +37,12 @@ import java.util.List;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 import org.testng.collections.Lists;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class MemoryTest {
   private static final String LS = System.getProperty("line.separator");
@@ -58,7 +57,7 @@ public class MemoryTest {
   @Test
   public void checkDirectRoundTrip() throws Exception {
     int n = 1024; //longs
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(n * 8, scope, memReqSvr);
       for (int i = 0; i < n; i++) {
         mem.putLong(i * 8, i);
@@ -355,7 +354,7 @@ public class MemoryTest {
   @Test(expectedExceptions = IllegalStateException.class)
   public void checkParentUseAfterFree() throws Exception {
     int bytes = 64 * 8;
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     WritableMemory wmem = WritableMemory.allocateDirect(bytes, scope, memReqSvr);
     wmem.close();
     //with -ea assert: Memory not valid.
@@ -367,7 +366,7 @@ public class MemoryTest {
   @Test(expectedExceptions = IllegalStateException.class)
   public void checkRegionUseAfterFree() throws Exception {
     int bytes = 64;
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     WritableMemory wmem = WritableMemory.allocateDirect(bytes, scope, memReqSvr);
     Memory region = wmem.region(0L, bytes);
     wmem.close();
@@ -387,7 +386,7 @@ public class MemoryTest {
     wbuf = wmem.asWritableBuffer();
     assertNull(wbuf.getMemoryRequestServer());
     //OFF HEAP
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
        wmem = WritableMemory.allocateDirect(16, scope, memReqSvr);  //OFF HEAP
       assertNotNull(wmem.getMemoryRequestServer());
       wbuf = wmem.asWritableBuffer();
@@ -406,7 +405,7 @@ public class MemoryTest {
     wbuf = wmem.asWritableBuffer();
     assertNotNull(wbuf.getMemoryRequestServer());
     //OFF HEAP
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory wmem2 = WritableMemory.allocateDirect(16, scope, memReqSvr);
       assertNotNull(wmem2.getMemoryRequestServer());
       wbuf = wmem.asWritableBuffer();

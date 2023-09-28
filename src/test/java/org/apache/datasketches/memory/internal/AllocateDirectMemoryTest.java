@@ -25,10 +25,9 @@ import static org.testng.Assert.assertTrue;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class AllocateDirectMemoryTest {
   private static final MemoryRequestServer memReqSvr = BaseState.defaultMemReqSvr;
@@ -37,9 +36,9 @@ public class AllocateDirectMemoryTest {
   public void simpleAllocateDirect() {
     int longs = 32;
     WritableMemory wMem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       wMem = WritableMemory.allocateDirect(longs << 3, scope, memReqSvr);
-      for (int i = 0; i<longs; i++) {
+      for (int i = 0; i < longs; i++) {
         wMem.putLong(i << 3, i);
         assertEquals(wMem.getLong(i << 3), i);
       }
@@ -55,7 +54,7 @@ public class AllocateDirectMemoryTest {
     int longs1 = 32;
     int bytes1 = longs1 << 3;
     WritableMemory wmem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       wmem = WritableMemory.allocateDirect(bytes1, scope, memReqSvr);
 
       for (int i = 0; i < longs1; i++) { //puts data in origWmem
@@ -79,7 +78,7 @@ public class AllocateDirectMemoryTest {
   @Test
   public void checkNonNativeDirect() {
     WritableMemory wmem = null;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       wmem = WritableMemory.allocateDirect( 128, 8, scope,
           BaseState.NON_NATIVE_BYTE_ORDER,
           memReqSvr);
@@ -93,7 +92,7 @@ public class AllocateDirectMemoryTest {
   public void checkExplicitCloseNoTWR() {
     final long cap = 128;
     WritableMemory wmem = null;
-    ResourceScope scope = ResourceScope.newConfinedScope();
+    MemoryScope scope = MemoryScope.newConfinedScope();
     wmem = WritableMemory.allocateDirect(cap, scope, memReqSvr);
     wmem.close(); //explicit close
   }

@@ -26,10 +26,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.apache.datasketches.memory.Memory;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 public class MemoryReadWriteSafetyTest {
 
@@ -183,7 +182,7 @@ public class MemoryReadWriteSafetyTest {
     try (RandomAccessFile raf = new RandomAccessFile(tempFile, "rw")) {
       raf.setLength(8);
       //System.out.println(UtilTest.getFileAttributes(tempFile));
-      try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+      try (MemoryScope scope = MemoryScope.newConfinedScope()) {
         Memory mem = Memory.map(tempFile, scope);
         ((WritableMemory) mem).putInt(0, 1);
       }
@@ -196,7 +195,7 @@ public class MemoryReadWriteSafetyTest {
     File tempFile = File.createTempFile("test", "test");
     tempFile.deleteOnExit();
     new RandomAccessFile(tempFile, "rw").setLength(8);
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       Memory mem = Memory.map(tempFile, 0, 4, scope, ByteOrder.nativeOrder());
       ((WritableMemory) mem).putInt(0, 1);
     }
@@ -208,7 +207,7 @@ public class MemoryReadWriteSafetyTest {
     tempFile.deleteOnExit();
     try (RandomAccessFile raf = new RandomAccessFile(tempFile, "rw")) {
       raf.setLength(8);
-      try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+      try (MemoryScope scope = MemoryScope.newConfinedScope()) {
         Memory.map(tempFile, 0, 16, scope, ByteOrder.nativeOrder());
       }
     }

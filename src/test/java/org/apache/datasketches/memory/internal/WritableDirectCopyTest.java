@@ -25,10 +25,9 @@ import static org.testng.Assert.fail;
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableMemory;
 import org.testng.annotations.Test;
-
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * @author Lee Rhodes
@@ -42,7 +41,7 @@ public class WritableDirectCopyTest {
   public void checkCopyWithinNativeSmall() throws Exception {
     int memCapacity = 64;
     int half = memCapacity / 2;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       mem.clear();
 
@@ -64,7 +63,7 @@ public class WritableDirectCopyTest {
     int memCapLongs = memCapacity / 8;
     int halfBytes = memCapacity / 2;
     int halfLongs = memCapLongs / 2;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       mem.clear();
 
@@ -83,7 +82,7 @@ public class WritableDirectCopyTest {
   @Test
   public void checkCopyWithinNativeOverlap() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       mem.clear();
       //println(mem.toHexString("Clear 64", 0, memCapacity));
@@ -99,7 +98,7 @@ public class WritableDirectCopyTest {
   @Test
   public void checkCopyWithinNativeSrcBound() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       mem.copyTo(32, mem, 32, 33);  //hit source bound check
       fail("Did Not Catch Assertion Error: source bound");
@@ -111,7 +110,7 @@ public class WritableDirectCopyTest {
   @Test
   public void checkCopyWithinNativeDstBound() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       mem.copyTo(0, mem, 32, 33);  //hit dst bound check
       fail("Did Not Catch Assertion Error: dst bound");
@@ -124,7 +123,7 @@ public class WritableDirectCopyTest {
   public void checkCopyCrossNativeSmall() throws Exception {
     int memCapacity = 64;
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       WritableMemory mem2 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
@@ -145,7 +144,7 @@ public class WritableDirectCopyTest {
     int memCapacity = (2 << 20) + 64;
     int memCapLongs = memCapacity / 8;
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
       WritableMemory mem2 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
@@ -165,7 +164,7 @@ public class WritableDirectCopyTest {
   @Test
   public void checkCopyCrossNativeAndByteArray() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
       for (int i = 0; i < mem1.getCapacity(); i++) {
@@ -186,7 +185,7 @@ public class WritableDirectCopyTest {
   public void checkCopyCrossRegionsSameNative() throws Exception {
     int memCapacity = 128;
 
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
       for (int i = 0; i < mem1.getCapacity(); i++) {
@@ -212,7 +211,7 @@ public class WritableDirectCopyTest {
   @Test
   public void checkCopyCrossNativeArrayAndHierarchicalRegions() throws Exception {
     int memCapacity = 64;
-    try (ResourceScope scope = ResourceScope.newConfinedScope()) {
+    try (MemoryScope scope = MemoryScope.newConfinedScope()) {
       WritableMemory mem1 = WritableMemory.allocateDirect(memCapacity, scope, memReqSvr);
 
       for (int i = 0; i < mem1.getCapacity(); i++) { //fill with numbers
