@@ -45,7 +45,7 @@ import jdk.incubator.foreign.MemorySegment;
  */
 final class NonNativeWritableBufferImpl extends BaseWritableBufferImpl {
 
-  //Pass-through ctor
+  //All non-native endian, read-only and writable Buffer instances start initialization here
   NonNativeWritableBufferImpl(
       final MemorySegment seg,
       final int typeId,

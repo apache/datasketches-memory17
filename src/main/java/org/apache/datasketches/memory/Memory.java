@@ -28,7 +28,6 @@ import java.nio.ByteOrder;
 import org.apache.datasketches.memory.internal.BaseWritableMemoryImpl;
 
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * Defines the read-only API for offset access to a resource.
@@ -71,10 +70,10 @@ public interface Memory extends BaseState {
   /**
    * Maps the given file into <i>Memory</i> for read operations
    * Calling this method is equivalent to calling
-   * {@link #map(File, long, long, ResourceScope, ByteOrder)
+   * {@link #map(File, long, long, MemoryScope, ByteOrder)
    * map(file, 0, file.length(), scope, ByteOrder.nativeOrder())}.
    * @param file the given file to map. It must be non-null with a non-negative length and readable.
-   * @param scope the given ResourceScope. It must be non-null.
+   * @param memScope the given MemoryScope. It must be non-null.
    * @return mapped Memory.
    * @throws IllegalArgumentException -- if file is not readable.
    * @throws IllegalStateException - if scope has been already closed, or if access occurs from a thread other
@@ -83,9 +82,9 @@ public interface Memory extends BaseState {
    * @throws SecurityException - If a security manager is installed and it denies an unspecified permission
    * required by the implementation.
    */
-  static Memory map(File file, ResourceScope scope)
+  static Memory map(File file, MemoryScope memScope)
       throws IllegalArgumentException, IllegalStateException, IOException, SecurityException {
-    return map(file, 0, file.length(), scope, ByteOrder.nativeOrder());
+    return map(file, 0, file.length(), memScope, ByteOrder.nativeOrder());
   }
 
   /**
@@ -93,7 +92,7 @@ public interface Memory extends BaseState {
    * @param file the given file to map. It must be non-null,readable and length &ge; 0.
    * @param fileOffsetBytes the position in the given file in bytes. It must not be negative.
    * @param capacityBytes the size of the mapped memory. It must not be negative..
-   * @param scope the given ResourceScope. It must be non-null.
+   * @param memScope the given MemoryScope. It must be non-null.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @return mapped Memory
    * @throws IllegalArgumentException -- if file is not readable.
@@ -103,9 +102,9 @@ public interface Memory extends BaseState {
    * @throws SecurityException - If a security manager is installed and it denies an unspecified permission
    * required by the implementation.
    */
-  static Memory map(File file, long fileOffsetBytes, long capacityBytes, ResourceScope scope, ByteOrder byteOrder)
+  static Memory map(File file, long fileOffsetBytes, long capacityBytes, MemoryScope memScope, ByteOrder byteOrder)
       throws IllegalArgumentException, IllegalStateException, IOException, SecurityException {
-    return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, scope, true, byteOrder);
+    return BaseWritableMemoryImpl.wrapMap(file, fileOffsetBytes, capacityBytes, memScope, true, byteOrder);
   }
 
   //NO ALLOCATE DIRECT, makes no sense

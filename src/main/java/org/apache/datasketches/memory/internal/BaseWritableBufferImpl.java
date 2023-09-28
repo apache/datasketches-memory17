@@ -63,6 +63,15 @@ public abstract class BaseWritableBufferImpl extends BaseBufferImpl implements W
 
   //BYTE BUFFER RESOURCE
 
+  /**
+   * Creates a read-only or writable, Native or Non-native endian Buffer instance
+   * given a ByteBuffer.
+   * @param byteBuffer the given ByteBuffer
+   * @param localReadOnly the given requested readOnly state
+   * @param byteOrder the given byte-order
+   * @return a WritableMemory instance, which may be read-only.
+   * @throws IllegalArgumentException if ByteBuffer is not writable.
+   */
   public static WritableBuffer wrapByteBuffer(
       final ByteBuffer byteBuffer,
       final boolean localReadOnly,

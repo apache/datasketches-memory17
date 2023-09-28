@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * Keeps key configuration state for Memory and Buffer plus some common static variables
@@ -38,10 +37,13 @@ public interface BaseState {
    */
   static final String LS = System.getProperty("line.separator");
 
+  /** Constant native ByteOrder */
   static final ByteOrder NATIVE_BYTE_ORDER = ByteOrder.nativeOrder();
+  /** Constant non-native ByteOrder */
   static final ByteOrder NON_NATIVE_BYTE_ORDER =
       ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
       ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
+  /** Constant default MemoryRequestServer */
   static final MemoryRequestServer defaultMemReqSvr = new DefaultMemoryRequestServer();
 
   /**
@@ -203,16 +205,16 @@ public interface BaseState {
   boolean isSameResource(Object that);
 
   /**
-   * Loads the contents of this mapped segment into physical memory. Please refer to
+   * Loads the contents of this mapped memory instance into physical memory. Please refer to
    * <a href="https://docs.oracle.com/en/java/javase/17/docs/api/jdk.incubator.foreign/jdk/incubator/foreign/MemorySegment.html#load()">load()</a>
    */
   void load();
 
   /**
-   * Returns the resource scope associated with this memory segment.
-   * @return the resource scope associated with this memory segment.
+   * Returns the MemoryScope associated with this memory instance.
+   * @return the MemoryScope associated with this memory instance.
    */
-  ResourceScope scope();
+  MemoryScope scope();
 
   //  /**
   //   * Sets the default MemoryRequestServer to be used in case of capacity overflow of off-heap

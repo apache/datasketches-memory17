@@ -27,12 +27,12 @@ import java.util.Objects;
 
 import org.apache.datasketches.memory.BaseState;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 
 import jdk.incubator.foreign.MemoryAddress;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
 
 /**
  * Keeps key configuration state for MemoryImpl and BufferImpl plus some common static variables
@@ -42,7 +42,7 @@ import jdk.incubator.foreign.ResourceScope;
  */
 abstract class BaseStateImpl implements BaseState {
   static final String JDK; //must be at least "1.8"
-  static final int JDK_MAJOR; //8, 11, 12, etc
+  static final int JDK_MAJOR; //8, 11, 17, 21, etc
 
   static final int BOOLEAN_SHIFT    = 0;
   static final int BYTE_SHIFT       = 0;
@@ -82,7 +82,7 @@ abstract class BaseStateImpl implements BaseState {
     JDK_MAJOR = (p[0] == 1) ? p[1] : p[0];
   }
 
-  final MemorySegment seg;
+  final MemorySegment seg; //the single reference to the MemorySegment is kept here.
   final int typeId;
 
   MemoryRequestServer memReqSvr;
@@ -388,8 +388,9 @@ abstract class BaseStateImpl implements BaseState {
   @Override
   public void load() { seg.load(); }
 
+  @SuppressWarnings("resource")
   @Override
-  public ResourceScope scope() { return seg.scope(); }
+  public MemoryScope scope() { return new MemoryScopeImpl(seg.scope()); }
 
   //  @Override
   //  public void setMemoryRequestServer(final MemoryRequestServer memReqSvr) {

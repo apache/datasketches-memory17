@@ -21,6 +21,7 @@ package org.apache.datasketches.memory.internal;
 
 import static java.nio.channels.FileChannel.MapMode.READ_ONLY;
 import static java.nio.channels.FileChannel.MapMode.READ_WRITE;
+import static java.util.Objects.requireNonNull;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -28,17 +29,16 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
-import java.util.Objects;
 
 import org.apache.datasketches.memory.Buffer;
 import org.apache.datasketches.memory.Memory;
 import org.apache.datasketches.memory.MemoryRequestServer;
+import org.apache.datasketches.memory.MemoryScope;
 import org.apache.datasketches.memory.WritableBuffer;
 import org.apache.datasketches.memory.WritableMemory;
 
 import jdk.incubator.foreign.MemoryAccess;
 import jdk.incubator.foreign.MemorySegment;
-import jdk.incubator.foreign.ResourceScope;
 
 /*
  * Developer notes: The heavier methods, such as put/get arrays, duplicate, region, clear, fill,
@@ -68,13 +68,20 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
 
   //WRAP HEAP ARRAY RESOURCE
 
+  /**
+   * Creates a read-only or writable, Native or Non-native endian Memory instance
+   * given a segment containing an arbitrary on-heap array.
+   * @param seg the given segment
+   * @param byteOrder the given byte-order
+   * @param memReqSvr a MemoryRequestServer or null
+   * @return a WritableMemory instance, which may be read-only.
+   */
   public static WritableMemory wrapSegmentAsArray(
       final MemorySegment seg,
       final ByteOrder byteOrder,
       final MemoryRequestServer memReqSvr) {
-    Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
-    int type = MEMORY
-        | (seg.isReadOnly() ? READONLY : 0);
+    requireNonNull(byteOrder, "byteOrder must be non-null");
+    int type = MEMORY | (seg.isReadOnly() ? READONLY : 0);
     if (byteOrder == NON_NATIVE_BYTE_ORDER) {
       type |= NONNATIVE;
       return new NonNativeWritableMemoryImpl(seg, type, memReqSvr);
@@ -84,12 +91,21 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
 
   //BYTE BUFFER RESOURCE
 
+  /**
+   * Creates a read-only or writable, Native or Non-native endian Memory instance
+   * given a ByteBuffer.
+   * @param byteBuffer the given ByteBuffer
+   * @param localReadOnly the given requested readOnly state
+   * @param byteOrder the given byte-order
+   * @return a WritableMemory instance, which may be read-only.
+   * @throws IllegalArgumentException if ByteBuffer is not writable.
+   */
   public static WritableMemory wrapByteBuffer(
       final ByteBuffer byteBuffer,
       final boolean localReadOnly,
       final ByteOrder byteOrder) {
-    Objects.requireNonNull(byteBuffer, "ByteBuffer must not be null");
-    Objects.requireNonNull(byteOrder, "ByteOrder must not be null");
+    requireNonNull(byteBuffer, "ByteBuffer must not be null");
+    requireNonNull(byteOrder, "ByteOrder must not be null");
     final ByteBuffer byteBuf;
     if (localReadOnly) {
       if (byteBuffer.isReadOnly()) {
@@ -121,23 +137,42 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
 
   //MAP FILE RESOURCE
 
+  /**
+   * Creates a writable, Native or Non-native endian, memory-mapped Memory instance.
+   * @param file the given file
+   * @param fileOffsetBytes the given offset bytes in the file
+   * @param capacityBytes the size (in bytes) of the mapped memory backing the memory segment.
+   * @param memScope the MemoryScope that wraps the ResourceScope
+   * @param localReadOnly true if the returned segment is to be read-only
+   * @param byteOrder the give byte order
+   * @return a WritableMemory that wraps a MemorySegment
+   * @throws IllegalArgumentException if file is not writable
+   * @throws IllegalStateException during IO operations
+   * @throws IOException during IO operations
+   * @throws SecurityException due to IO security issues
+   */
   @SuppressWarnings("resource")
   public static WritableMemory wrapMap(
       final File file,
       final long fileOffsetBytes,
       final long capacityBytes,
-      final ResourceScope scope,
+      final MemoryScope memScope,
       final boolean localReadOnly,
       final ByteOrder byteOrder)
           throws IllegalArgumentException, IllegalStateException, IOException, SecurityException {
-    Objects.requireNonNull(file, "File must be non-null.");
-    Objects.requireNonNull(byteOrder, "ByteOrder must be non-null.");
-    Objects.requireNonNull(scope, "ResourceScope must be non-null.");
+    requireNonNull(file, "File must be non-null.");
+    requireNonNull(byteOrder, "ByteOrder must be non-null.");
+    requireNonNull(memScope, "MemoryScope must be non-null.");
     if (!file.canRead()) { throw new IllegalArgumentException("File must be readable."); }
     if (!localReadOnly && !file.canWrite()) { throw new IllegalArgumentException("File must be writable."); }
     final FileChannel.MapMode mapMode = (localReadOnly) ? READ_ONLY : READ_WRITE;
 
-    final MemorySegment seg = MemorySegment.mapFile(file.toPath(), fileOffsetBytes, capacityBytes, mapMode, scope);
+    final MemorySegment seg = MemorySegment.mapFile(
+        file.toPath(),
+        fileOffsetBytes,
+        capacityBytes,
+        mapMode,
+        ((MemoryScopeImpl)memScope).getResourceScope());
     final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final int type = MEMORY | MAP | DIRECT
         | (localReadOnly ? READONLY : 0)
@@ -153,8 +188,8 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
    * The static constructor that chooses the correct Direct leaf node based on the byte order.
    * @param capacityBytes the requested capacity for the Direct (off-heap) memory.  It must be &ge; 0.
    * @param alignmentBytes requested segment alignment. Typically 1, 2, 4 or 8.
-   * @param scope ResourceScope for the backing MemorySegment.
-   * Typically <i>ResourceScope.newConfinedScope()</i>.
+   * @param memScope MemoryScope that wraps a ResourceScope for the backing MemorySegment.
+   * Typically <i>MemoryScope.newConfinedScope()</i>.
    * @param byteOrder the byte order to be used.  It must be non-null.
    * @param memReqSvr A user-specified MemoryRequestServer, which may be null.
    * This is a callback mechanism for a user client of direct memory to request more memory.
@@ -164,15 +199,15 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
   public static WritableMemory wrapDirect(
       final long capacityBytes,
       final long alignmentBytes,
-      final ResourceScope scope,
+      final MemoryScope memScope,
       final ByteOrder byteOrder,
       final MemoryRequestServer memReqSvr) {
-    Objects.requireNonNull(scope, "ResourceScope must be non-null");
-    Objects.requireNonNull(byteOrder, "ByteOrder must be non-null");
+    requireNonNull(memScope, "MemoryScope must be non-null");
+    requireNonNull(byteOrder, "ByteOrder must be non-null");
     final MemorySegment seg = MemorySegment.allocateNative(
         capacityBytes,
         alignmentBytes,
-        scope);
+        ((MemoryScopeImpl)memScope).getResourceScope());
     final boolean nativeBOType = byteOrder == ByteOrder.nativeOrder();
     final int type = MEMORY | DIRECT
         | (nativeBOType ? NATIVE : NONNATIVE);
@@ -202,7 +237,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
       final boolean localReadOnly,
       final ByteOrder byteOrder) {
     if (!this.isAlive()) { throw new IllegalStateException("This Memory is not alive."); }
-    Objects.requireNonNull(byteOrder, "byteOrder must be non-null.");
+    requireNonNull(byteOrder, "byteOrder must be non-null.");
     final boolean readOnly = isReadOnly() || localReadOnly;
     final MemorySegment slice = (readOnly && !seg.isReadOnly())
         ? seg.asSlice(offsetBytes, capacityBytes).asReadOnly()
@@ -242,7 +277,7 @@ public abstract class BaseWritableMemoryImpl extends BaseStateImpl implements Wr
 
   private WritableBuffer asWritableBufferImpl(final boolean localReadOnly, final ByteOrder byteOrder) {
     if (!this.isAlive()) { throw new IllegalStateException("This Memory is not alive."); }
-    Objects.requireNonNull(byteOrder, "byteOrder must be non-null");
+    requireNonNull(byteOrder, "byteOrder must be non-null");
     final boolean readOnly = isReadOnly() || localReadOnly;
     final MemorySegment seg2 = (readOnly && !seg.isReadOnly()) ? seg.asReadOnly() : seg;
     final boolean regionType = isRegion();

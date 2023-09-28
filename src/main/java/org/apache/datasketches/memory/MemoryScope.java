@@ -21,17 +21,49 @@ package org.apache.datasketches.memory;
 
 import java.lang.ref.Cleaner;
 
-import jdk.incubator.foreign.ResourceScope;
+import org.apache.datasketches.memory.internal.MemoryScopeImpl;
+
 
 /**
  * A wrapper around jdk.incubator.foreign.ResourceScope
  */
-@SuppressWarnings("resource")
-public final class MemoryScope {
-  private ResourceScope resourceScope;
+public abstract class MemoryScope {
 
-  private MemoryScope(final ResourceScope resourceScope) {
-    this.resourceScope = resourceScope;
+  /**
+   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.globalScope()</i>.
+   */
+  public static MemoryScope globalScope() {
+     return MemoryScopeImpl.getGlobalScope();
+  }
+
+  /**
+   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.newConfiledScope()</i>.
+   */
+  public static MemoryScope newConfinedScope() {
+    return MemoryScopeImpl.getNewConfinedScope();
+  }
+
+  /**
+   * @param cleaner a user defined <i>Cleaner</i> for this scope
+   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.newConfinedScope(Cleaner)</i>.
+   */
+  public static MemoryScope newConfinedScope(final Cleaner cleaner) {
+    return MemoryScopeImpl.getNewConfinedScope(cleaner);
+  }
+
+  /**
+   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.newSharedScope()</i>.
+   */
+  public static MemoryScope newSharedScope() {
+    return MemoryScopeImpl.getNewSharedScope();
+  }
+
+  /**
+   * @param cleaner a user defined <i>Cleaner</i> for this scope
+   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.newSharedScope(Cleaner)</i>.
+   */
+  public static MemoryScope newSharedScope(final Cleaner cleaner) {
+    return MemoryScopeImpl.getNewSharedScope(cleaner);
   }
 
   /**
@@ -40,9 +72,7 @@ public final class MemoryScope {
    * acquired from it have been <i>release(Handle)</i> released.
    * @return a <i>MemoryScope.Handle</i>.
    */
-  public Handle acquire() {
-    return new Handle();
-  }
+  public abstract Handle acquire();
 
   /**
    * Add a custom cleanup action which will be executed when the underlying <i>ResourceScope</i> is closed.
@@ -51,112 +81,53 @@ public final class MemoryScope {
    * @param runnable the custom cleanup action to be associated with this scope.
    * @throws IllegalStateException if this scope has already been closed.
    */
-  public void addCloseAction(final Runnable runnable) {
-    resourceScope.addCloseAction(runnable);
-  }
+  public abstract void addCloseAction(final Runnable runnable);
 
   /**
    * Closes this the underlying <i>ResourceScope</i>.
    */
-  public void close() {
-    if (resourceScope != null) {
-    resourceScope.close();
-    }
-  }
-
-  /**
-   * Returns the underlying <i>ResourceScope</i>.
-   * @return the underlying <i>ResourceScope</i>.
-   */
-  ResourceScope getResourceScope() {
-    return resourceScope;
-  }
-
-  /**
-   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.globalScope()</i>.
-   */
-  public static MemoryScope globalScope() {
-     return new MemoryScope(ResourceScope.globalScope());
-  }
+  public abstract void close();
 
   /**
    * Is the underlying <i>ResourceScope</i> alive?
    * @return true if this resource scope is alive.
    */
-  public boolean isAlive() {
-    return resourceScope.isAlive();
-  }
+  public abstract boolean isAlive();
 
   /**
    * Is the underlying <i>ResourceScope</i> alive?
    * @return true if the underlying <i>ResourceScope</i> is alive.
    */
-  public boolean isImplicit() {
-    return resourceScope.isImplicit();
-  }
-
-  /**
-   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.newConfiledScope()</i>.
-   */
-  public static MemoryScope newConfinedScope() {
-    return new MemoryScope(ResourceScope.newConfinedScope());
-  }
-
-  /**
-   * @param cleaner a user defined <i>Cleaner</i> for this scope
-   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.newConfinedScope(Cleaner)</i>.
-   */
-  public static MemoryScope newConfinedScope(final Cleaner cleaner) {
-    return new MemoryScope(ResourceScope.newConfinedScope(cleaner));
-  }
-
-  /**
-   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.newSharedScope()</i>.
-   */
-  public static MemoryScope newSharedScope() {
-    return new MemoryScope(ResourceScope.newSharedScope());
-  }
-
-  /**
-   * @param cleaner a user defined <i>Cleaner</i> for this scope
-   * @return a new <i>MemoryScope</i> that wraps a <i>ResourceScope.newSharedScope(Cleaner)</i>.
-   */
-  public static MemoryScope newSharedScope(final Cleaner cleaner) {
-    return new MemoryScope(ResourceScope.newSharedScope(cleaner));
-  }
+  public abstract boolean isImplicit();
 
   /**
    * The thread owning the underlying <i>ResourceScope</i>.
    * @return the thread owning the underlying <i>ResourceScope</i>.
    */
-  public Thread ownerThread() {
-    return resourceScope.ownerThread();
-  }
+  public abstract Thread ownerThread();
 
-  public void release(final MemoryScope.Handle handle) {
-    if (handle.scope() == this) { handle.release(handle); }
-  }
+  /**
+   * Releases the given handle
+   * @param handle the given handle
+   */
+  public abstract void release(final MemoryScope.Handle handle);
 
   /**
    * A handle for this <i>MemoryScope</i>.
    */
-  public class Handle {
-    private ResourceScope.Handle myResourceHandle;
-
-    Handle() {
-      this.myResourceHandle = resourceScope.acquire();
-    }
+  public abstract class Handle {
 
     /**
      * Returns the <i>MemoryScope</i> associated with this handle.
      * @return the <i>MemoryScope</i> associated with this handle.
      */
-    public MemoryScope scope() { return MemoryScope.this; }
+    public abstract MemoryScope scope();
 
-    void release(final MemoryScope.Handle handle) {
-      if (handle.myResourceHandle == myResourceHandle) {
-        MemoryScope.this.resourceScope.release(myResourceHandle);
-      }
-    }
+    /**
+     * Releases the given handle if valid.
+     * @param handle the given handle
+     */
+    public abstract void release(final MemoryScope.Handle handle);
+
   }
 }

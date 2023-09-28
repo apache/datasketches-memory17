@@ -44,7 +44,7 @@ import jdk.incubator.foreign.MemorySegment;
  */
 final class NonNativeWritableMemoryImpl extends BaseWritableMemoryImpl {
 
-  //Pass-through ctor
+  //All non-native endian, read-only and writable Memory instances start initialization here
   NonNativeWritableMemoryImpl(
       final MemorySegment seg,
       final int typeId,
