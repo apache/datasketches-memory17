@@ -22,8 +22,6 @@ package org.apache.datasketches.memory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-import jdk.incubator.foreign.MemorySegment;
-
 /**
  * Keeps key configuration state for Memory and Buffer plus some common static variables
  * and check methods.
@@ -242,13 +240,6 @@ public interface BaseState {
    * @return a description and hex output in a human readable format.
    */
   String toHexString(String comment, long offsetBytes, int lengthBytes, boolean withData);
-
-  /**
-   * Returns a copy of the underlying MemorySegment.
-   * The size is limited to <i>Integer.MAX_VALUE</i>.
-   * @return a copy of the underlying MemorySegment
-   */
-  MemorySegment toMemorySegment();
 
   /**
    * Unloads the contents of this mapped segment from physical memory. Please refer to

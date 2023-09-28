@@ -19,9 +19,11 @@
 
 package org.apache.datasketches.memory.internal;
 
+import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import org.apache.datasketches.memory.Buffer;
@@ -65,7 +67,7 @@ public class BaseStateTest {
     assertTrue(out != 0);
   }
 
-  @Test
+  @Test //visual only
   public void checkTypeDecode() {
     for (int i = 0; i < 256; i++) {
       String str = BaseStateImpl.typeDecode(i);
@@ -73,20 +75,20 @@ public class BaseStateTest {
     }
   }
 
-  @Test
+  @Test //visual only
   public void checkToHexString() {
     WritableMemory mem = WritableMemory.writableWrap(new byte[16]);
-    println(mem.toHexString("baseMem", 0, 16, true));
     for (int i = 0; i < 16; i++) { mem.putByte(i, (byte)i); }
+    println(mem.toHexString("baseMem", 0, 16, true)); //empty
     Buffer buf = mem.asBuffer();
     println(buf.toHexString("buffer", 0, 16, true));
   }
 
   @Test
-  public void checkToMemorySegment() {
+  public void checkAsByteBuffer() {
     WritableMemory mem = WritableMemory.allocate(8);
-    mem.toMemorySegment();
-    mem.asByteBufferView(ByteOrder.nativeOrder());
+    ByteBuffer buf = mem.asByteBufferView(ByteOrder.nativeOrder());
+    assertEquals(buf.capacity(), 8);
   }
 
   /********************/
@@ -99,7 +101,7 @@ public class BaseStateTest {
    * @param s value to print
    */
   static void println(String s) {
-    //System.out.println(s); //disable here
+    System.out.println(s); //disable here
   }
 
 }

@@ -124,10 +124,7 @@ public class MemoryScopeImpl extends MemoryScope {
 
   @Override
   public void release(final MemoryScope.Handle handle) {
-    final HandleImpl handleImpl = (MemoryScopeImpl.HandleImpl) handle;
-    if (handleImpl.scope() == this) {
-      handleImpl.release(handleImpl);
-    }
+    handle.release(handle);
   }
 
   /**
@@ -144,12 +141,12 @@ public class MemoryScopeImpl extends MemoryScope {
     }
 
     @Override
-    public MemoryScope scope() { return MemoryScopeImpl.this; }
+    public MemoryScopeImpl scope() { return MemoryScopeImpl.this; }
 
     @Override
     public void release(final MemoryScope.Handle handle) {
-      if ((MemoryScopeImpl.HandleImpl) handle == myResourceHandle) {
-        MemoryScopeImpl.this.resourceScope.release(myResourceHandle);
+      if (((MemoryScopeImpl.HandleImpl) handle).myResourceHandle == myResourceHandle) {
+        resourceScope.release(myResourceHandle);
       }
     }
   }

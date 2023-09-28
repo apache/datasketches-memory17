@@ -409,11 +409,12 @@ abstract class BaseStateImpl implements BaseState {
     return toHex(this, comment, offsetBytes, lengthBytes, withData);
   }
 
-  @Override
+  /**
+   * Returns the underlying MemorySegment.
+   * @return a copy of the underlying MemorySegment
+   */
   public MemorySegment toMemorySegment() {
-    final MemorySegment arrSeg = MemorySegment.ofArray(new byte[(int)seg.byteSize()]);
-    arrSeg.copyFrom(seg);
-    return arrSeg;
+    return seg;
   }
 
   @Override

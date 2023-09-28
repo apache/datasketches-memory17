@@ -21,8 +21,6 @@ package org.apache.datasketches.memory;
 
 import org.apache.datasketches.memory.internal.MurmurHash3v3;
 
-import jdk.incubator.foreign.MemorySegment;
-
 /**
  * <p>The MurmurHash3 is a fast, non-cryptographic, 128-bit hash function that has
  * excellent avalanche and 2-way bit independence properties.</p>
@@ -149,21 +147,6 @@ public final class MurmurHash3 {
   public static long[] hash(final Memory mem, final long offsetBytes, final long lengthBytes,
       final long seed, final long[] hashOut) {
     return MurmurHash3v3.hash(mem, offsetBytes, lengthBytes, seed, hashOut);
-  }
-
-  /**
-   * Returns a 128-bit hash of the input as a long array of size 2.
-   *
-   * @param seg The input MemorySegment. Must be non-null and non-empty.
-   * @param offsetBytes the starting point within Memory.
-   * @param lengthBytes the total number of bytes to be hashed.
-   * @param seed A long valued seed.
-   * @param hashOut the size 2 long array for the resulting 128-bit hash
-   * @return the hash.
-   */
-  public static long[] hash(final MemorySegment seg, final long offsetBytes, final long lengthBytes,
-      final long seed, final long[] hashOut) {
-    return MurmurHash3v3.hash(seg, offsetBytes, lengthBytes, seed, hashOut);
   }
 
 }

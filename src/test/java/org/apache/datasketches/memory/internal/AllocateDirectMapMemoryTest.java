@@ -30,6 +30,7 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.ByteOrder;
 
 import org.apache.datasketches.memory.Memory;
@@ -98,20 +99,27 @@ public class AllocateDirectMapMemoryTest {
 
   @SuppressWarnings("resource")
   @Test
-  public void testHandleHandoff() throws Exception {
+  public void testHandleLock() {
     File file = getResourceFile("GettysburgAddress.txt");
     long memCapacity = file.length();
     MemoryScope scope = MemoryScope.newConfinedScope();
-    Memory mem = Memory.map(file, 0, memCapacity, scope, ByteOrder.nativeOrder());
-    MemoryScope.Handle handle = scope.acquire();
+    Memory mem;
     try {
-      mem.load();
-      assertTrue(mem.isLoaded());
-    } finally {
+      mem = Memory.map(file, 0, memCapacity, scope, ByteOrder.nativeOrder());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    MemoryScope.Handle handle = scope.acquire();
+    mem.load();
+    assertTrue(mem.isLoaded());
+    assertTrue(mem.isAlive());
+    try {
+      mem.close();
+      fail();
+    } catch (IllegalStateException e) { //handle must be released before close
       mem.scope().release(handle);
     }
-    assertTrue(mem.isAlive());
-    mem.close(); //handle must be released before close
+    mem.close();
     assertFalse(mem.isAlive());
   }
 

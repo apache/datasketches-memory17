@@ -31,8 +31,6 @@ import org.apache.datasketches.memory.WritableMemory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import jdk.incubator.foreign.MemorySegment;
-
 /**
  * Tests the MurmurHash3 against specific, known hash results given known
  * inputs obtained from the public domain C++ version 150.
@@ -47,20 +45,6 @@ public class MurmurHash3v3Test {
     String keyStr = "The quick brown fox jumps over the lazy dog";
     byte[] key = keyStr.getBytes(UTF_8);
     long[] result = hash(key, 0);
-    //Should be:
-    long h1 = 0xe34bbc7bbc071b6cL;
-    long h2 = 0x7a433ca9c49a9347L;
-    Assert.assertEquals(result[0], h1);
-    Assert.assertEquals(result[1], h2);
-  }
-
-  @Test
-  public void checkByteArrRemainderGT8withSegment() { //byte[], remainder > 8
-    String keyStr = "The quick brown fox jumps over the lazy dog";
-    byte[] key = keyStr.getBytes(UTF_8);
-    long[] out = new long[2];
-    MemorySegment seg = MemorySegment.ofArray(key);
-    long[] result = hash(seg, 0, seg.byteSize(), 0, out);
     //Should be:
     long h1 = 0xe34bbc7bbc071b6cL;
     long h2 = 0x7a433ca9c49a9347L;
