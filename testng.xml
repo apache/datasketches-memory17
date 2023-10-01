@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+
+<suite name="Testing Memory17">
+  <test name="Test ALL">
+    <classes>
+      <class name="org.apache.datasketches.memory.internal.AllocateDirectMapMemoryTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.AllocateDirectMemoryTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.AllocateDirectWritableMapMemoryTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.BaseBufferTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.BaseStateTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.Buffer2Test.java"/>
+      <class name="org.apache.datasketches.memory.internal.BufferBoundaryCheckTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.BufferInvariantsTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.BufferReadWriteSafetyTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.BufferTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.CommonBufferTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.CommonMemoryTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.CopyMemoryOverlapTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.CopyMemoryTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.DruidIssue11544Test.java"/>
+      <class name="org.apache.datasketches.memory.internal.ExampleMemoryRequestServerTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.IgnoredArrayOverflowTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.LeafImplTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.MemoryBoundaryCheckTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.MemoryReadWriteSafetyTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.MemoryTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.MemoryWriteToTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.MurmurHash3v3Test.java"/>
+      <class name="org.apache.datasketches.memory.internal.NativeWritableBufferImplTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.NativeWritableMemoryImplTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.NonNativeWritableBufferImplTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.NonNativeWritableMemoryImplTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.SpecificLeafTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.UtilTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.WritableDirectCopyTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.WritableMemoryTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.XxHash64LoopingTest.java"/>
+      <class name="org.apache.datasketches.memory.internal.XxHash64Test.java"/>
+      <class name="org.apache.datasketches.memory.internal.ZeroCapacityTest.java"/>
+    </classes>
+  </test>
+</suite>
