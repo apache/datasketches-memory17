@@ -30,7 +30,7 @@ bin/
 .mtj.tmp/
 
 # Package Files #
-*.jar
+#*.jar
 *.war
 *.ear
 *.zip
@@ -52,7 +52,6 @@ target/
 out/
 build/
 jarsIn/
-*.jar
 build.xml
 *.properties
 *.releaseBackup
