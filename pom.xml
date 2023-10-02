@@ -394,11 +394,6 @@ under the License.
             <jdkToolchain>
               <version>${jdk-toolchain.version}</version>
             </jdkToolchain>
-            <!--
-            <configuration>
-              <argLine>${argline} --add-module --patch-module ... </argline>
-            </configuration>
-            -->
             <reportsDirectory>${project.build.directory}/test-output/${maven.build.timestamp}</reportsDirectory>
           </configuration>
         </plugin>

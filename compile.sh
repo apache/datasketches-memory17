@@ -42,7 +42,7 @@ $JAVAC \
 
 echo " # create jar datasketches-memory-3.0.0.jar from src/main/java"
 $JAR --create \
-  --file mods/datasketches-memory-3.0.0.jar \
+  --file libs/datasketches-memory-3.0.0.jar \
   -C target/classes .
 
 echo " # compile tests from src/test/java"
