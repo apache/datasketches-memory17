@@ -1,0 +1,12 @@
+datasketches-memory-tests-3.0.0.jar  #NOTE RENAMED THE FILE!!
+
+$ jar --describe-module --file datasketches-memory-tests-3.0.0.jar
+No module descriptor found. Derived automatic module.
+
+datasketches.memory.tests@3.0.0 automatic
+requires java.base mandated
+contains org.apache.datasketches.memory.internal
+
+$ unzip -p datasketches-memory-tests-3.0.0.jar META-INF/MANIFEST.MF
+Manifest-Version: 1.0
+Created-By: 17.0.8 (Eclipse Adoptium)
