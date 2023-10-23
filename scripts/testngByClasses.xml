@@ -50,6 +50,7 @@ under the License.
       <class name="org.apache.datasketches.memory.internal.NativeWritableMemoryImplTest"/>
       <class name="org.apache.datasketches.memory.internal.NonNativeWritableBufferImplTest"/>
       <class name="org.apache.datasketches.memory.internal.NonNativeWritableMemoryImplTest"/>
+      <class name="org.apache.datasketches.memory.internal.ResourceFromJarTest"/>
       <class name="org.apache.datasketches.memory.internal.SpecificLeafTest"/>
       <class name="org.apache.datasketches.memory.internal.UtilTest"/>
       <class name="org.apache.datasketches.memory.internal.WritableDirectCopyTest"/>

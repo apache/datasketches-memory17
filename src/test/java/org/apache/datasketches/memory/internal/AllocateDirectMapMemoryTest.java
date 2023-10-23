@@ -99,7 +99,7 @@ public class AllocateDirectMapMemoryTest {
 
   @SuppressWarnings("resource")
   @Test
-  public void testHandleLock() {
+  public void testHandleLock() throws IOException {
     File file = getResourceFile("GettysburgAddress.txt");
     long memCapacity = file.length();
     MemoryScope scope = MemoryScope.newConfinedScope();

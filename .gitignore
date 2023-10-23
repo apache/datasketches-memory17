@@ -45,10 +45,11 @@ test-output/
 local/
 reports/
 .pmd
-tmp/
+tmp/**
 
 # Build artifacts
 target/
+target2/
 out/
 build/
 jarsIn/
@@ -61,5 +62,12 @@ doc/
 
 # Jekyll
 _site/
+
 _*
 _*/
+**/.keep.txt
+**/GettysburgAddress.txt
+**/MANIFEST.MF
+libs
+mods
+

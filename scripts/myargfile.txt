@@ -1,5 +1,3 @@
-#!/bin/bash -e
-
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -17,9 +15,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#Java executables for mac environment
-export JAVAC=$JAVA17_HOME/bin/javac
-export JAR=$JAVA17_HOME/bin/jar
-export JAVA=$JAVA17_HOME/bin/java
+# -testjar /Users/lrhodes/dev/git/Apache/datasketches-memory17/libs/datasketches-memory-tests-3.0.0.jar
+# -verbose:class
 
-echo " --- Run TestNG"
+# The directories are specified relative to where Java is run, NOT relative to where this file is located!
+
+-classpath "libs/*"
+--add-modules jdk.incubator.foreign
+-ea
+org.testng.TestNG
+-d target2/test-output
+scripts/testngByPackage.xml
